@@ -1,0 +1,67 @@
+# Secrets (POSTGRES_PASSWORD, N8N_ENCRYPTION_KEY) come from a gitignored .env in
+# this directory — docker compose loads it automatically. Copy .env.example to
+# .env and fill it in before the first `docker compose up -d`.
+# The `:?` guards fail fast with a clear message if a required secret is unset.
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: n8n_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    # Pinned for reproducibility. Bump deliberately after testing a new version.
+    image: docker.n8n.io/n8nio/n8n:2.18.7
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Pin the credential encryption key so saved credentials survive container/
+      # volume recreation. MUST stay constant, or all stored credentials break.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in .env}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - NODE_ENV=production
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./leads.csv:/home/node/.n8n-files/leads.csv    # ← Added for XLSX mode
+      - ./assets:/home/node/.n8n-files/assets:ro       # ← Static email attachments (read-only)
+    networks:
+      - n8n_network
+    healthcheck:
+      # n8n's health endpoint is /healthz; the image ships wget (not curl).
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  n8n_network:
+    driver: bridge

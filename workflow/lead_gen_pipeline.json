@@ -1,0 +1,478 @@
+{
+  "name": "Lead Gen Pipeline - v1",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/api/v1/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\",\n  \"Cache-Control\": \"no-cache\",\n  \"accept\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n     \"per_page\": 30\n   }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -496,
+        -160
+      ],
+      "id": "189a0248-a4e6-4a06-b494-aae85e1b657a",
+      "name": "Fetch Apollo Contacts",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hMZtBBguqVRci9hy",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69c6da95-1c00-4c84-b915-1feac7a34b1d",
+              "name": "contacts",
+              "value": "={{ $json.contacts }}",
+              "type": "array"
+            },
+            {
+              "id": "ff2ab85a-45e6-4fea-99e3-7a94a448be00",
+              "name": "test_email",
+              "value": "you@example.com",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        -160
+      ],
+      "id": "1b2ebc6c-3d0e-4460-835f-f43267d01f6f",
+      "name": "Extract Contacts Array"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "contacts",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -160
+      ],
+      "id": "1707d8d3-6e22-45d0-bbc0-fb28c2153bf2",
+      "name": "Split Into Individual Leads"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Lead Tracker Apollo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -48,
+        -352
+      ],
+      "id": "71feb9ff-056a-4356-9693-9721a833e1b6",
+      "name": "Load Contacted Leads",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "email",
+        "joinMode": "keepNonMatches",
+        "outputDataFrom": "input2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        176,
+        -256
+      ],
+      "id": "d708fc9b-fc57-435a-b5b4-020258c6029e",
+      "name": "Filter Already Contacted"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "grok-4.3",
+          "mode": "list",
+          "cachedResultName": "grok-4.3"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "019ad0fd-f949-4a27-8d1c-c2aeb97bc1b6",
+      "name": "Grok 4.3",
+      "credentials": {
+        "openAiApi": {
+          "id": "YLnEaN2tA9dJdCh6",
+          "name": "xAI Grok account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Lead Tracker Apollo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.contacts.email }}",
+            "Name": "={{ $json.contacts.name }}",
+            "Date Contacted": "={{ $now.toISO() }}",
+            "Status": "Contacted",
+            "Company": "={{ $json.contacts.organization_name }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Contacted",
+              "displayName": "Date Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        -256
+      ],
+      "id": "2c5c239d-5cd3-4962-86db-e96a3b2385e3",
+      "name": "Log Lead to Tracker",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "=Quick question about {{ $json.contacts.organization_name }}",
+        "emailType": "text",
+        "message": "={{ $('🤖 Grok Email Writer').item.json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        -256
+      ],
+      "id": "c8f8cf3c-f3b4-4959-a234-34bb15508fb3",
+      "name": "Send Outreach Email",
+      "webhookId": "2874455b-ed1e-4790-b812-d5bd844e9c6a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "JfJfPJkpQXrgXkQS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -256
+      ],
+      "id": "e2043f65-25b2-4153-93f7-0af58a4f1498",
+      "name": "Start Pipeline"
+    },
+    {
+      "parameters": {
+        "content": "STAGE 1-2: Lead Sourcing"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -304,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "1fe5c90a-6625-422e-8456-e95c77ccce93",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "STAGE 3: Deduplication"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        112,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "2e5c5ed2-e75e-4263-8fd7-3a0762820b5d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "STAGE 4-6: AI Personalization & Outreach"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        512,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "2a185b39-2b3a-4c1c-b197-399642f05434",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a short personalized cold outreach email for this lead:\n\nName: {{ $json.contacts.name }}\nJob Title: {{ $json.contacts.title }}\nCompany: {{ $json.contacts.organization_name }}\n\nInstructions:\n- Start with a personalized opening line referencing their role or company\n- Keep it under 100 words\n- Sound human, not salesy\n- End with a soft CTA to book a 15-minute call\n- Write email body only, no subject line",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        -256
+      ],
+      "id": "debe5e91-8095-437b-bb86-ee6b9e85bb32",
+      "name": "🤖 Grok Email Writer"
+    },
+    {
+      "parameters": {
+        "content": "🚀 AI Lead Generation Pipeline\n   Built with: Apollo.io | xAI Grok 4.3 | Gmail | Google Sheets",
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -688,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "2ff6e000-a533-400c-b41b-5883527d75fe",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Fetch Apollo Contacts": {
+      "main": [
+        [
+          {
+            "node": "Extract Contacts Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Contacts Array": {
+      "main": [
+        [
+          {
+            "node": "Split Into Individual Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Individual Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter Already Contacted",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Load Contacted Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter Already Contacted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Already Contacted": {
+      "main": [
+        [
+          {
+            "node": "🤖 Grok Email Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grok 4.3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🤖 Grok Email Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Lead to Tracker": {
+      "main": [
+        [
+          {
+            "node": "Send Outreach Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Fetch Apollo Contacts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Load Contacted Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Grok Email Writer": {
+      "main": [
+        [
+          {
+            "node": "Log Lead to Tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "95509402-05f4-4534-bb12-8de3da6f37fd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "72b34481d564af8d2e0f109882075302fb75ba8698f1e1e1a64dfb88f8264216"
+  },
+  "nodeGroups": [],
+  "id": "9OA2cXOOL3lkYB5y",
+  "tags": []
+}

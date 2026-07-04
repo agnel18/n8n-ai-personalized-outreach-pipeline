@@ -1,0 +1,21 @@
+{
+  "name": "lead-gen-workers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Execution workers for the n8n lead-gen pipeline: browser workers (ChatGPT / Grok) and an OpenAI-compatible API worker. All expose the same HTTP contract.",
+  "main": "chatgpt_worker.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node grok_worker.js",
+    "start:chatgpt": "node chatgpt_worker.js",
+    "start:api": "node api_worker.js",
+    "inspect": "node inspect_dom.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "playwright": "^1.54.2"
+  }
+}

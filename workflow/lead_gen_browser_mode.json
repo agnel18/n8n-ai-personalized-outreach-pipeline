@@ -1,0 +1,1203 @@
+{
+  "name": "Lead Gen Pipeline - Browser Grok Mode",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        -120
+      ],
+      "id": "0b0dbf34-7e03-4a38-a0c0-ded8d70bd577",
+      "name": "Start Pipeline"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/api/v1/contacts/search",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({\n  \"Content-Type\": \"application/json\",\n  \"accept\": \"application/json\",\n  \"X-Api-Key\": $env.apollo_api_key || $env.APOLLO_API_KEY || ''\n}) }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  per_page: Number($env.APOLLO_PER_PAGE || 25),\n  q_person_persona_ids: ($env.APOLLO_PERSONA_IDS || '').split(',').map(v => v.trim()).filter(Boolean),\n  person_locations: [$env.APOLLO_COUNTRY || 'United Arab Emirates']\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -880,
+        -120
+      ],
+      "id": "66972b2e-604f-4ea1-b179-16f9f8b28ccf",
+      "name": "Apollo Persona Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "const contacts = $json.contacts || $json.people || [];\nif (!Array.isArray(contacts) || contacts.length === 0) {\n  throw new Error('Apollo returned no contacts.');\n}\n\nconst firstWithCompany = contacts.find(c => c.organization_name && c.email) || contacts.find(c => c.email) || contacts[0];\nif (!firstWithCompany?.email) {\n  throw new Error('Apollo returned contacts without email.');\n}\n\nconst now = new Date();\nconst pad = (n) => String(n).padStart(2, '0');\nconst runId = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;\n\nconst lead = firstWithCompany;\nlead.organization_name = lead.organization_name || lead.company || 'Unknown Company';\n\nreturn [{\n  json: {\n    run_id: runId,\n    grok_worker_url: $env.GROK_WORKER_URL || 'http://host.docker.internal:8787',\n    status: 'Fetched',\n    operator_action: 'Lead selected. One-company test mode enabled.',\n    updated_at: new Date().toISOString(),\n    lead,\n    raw_apollo_json: JSON.stringify(lead),\n    idempotency_key: `${(lead.email || '').toLowerCase()}_${(lead.organization_name || '').toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${runId.slice(0,8)}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        -120
+      ],
+      "id": "7a9e1e3b-d6db-4d67-952d-ef354f2f14fd",
+      "name": "Select One Company Lead"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Apollo Tracker Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead.email }}",
+            "Name": "={{ $json.lead.name }}",
+            "Title": "={{ $json.lead.title }}",
+            "Company": "={{ $json.lead.organization_name }}",
+            "Status": "={{ $json.status }}",
+            "Operator_Action": "={{ $json.operator_action }}",
+            "Run_ID": "={{ $json.run_id }}",
+            "Updated_At": "={{ $json.updated_at }}",
+            "Raw_Apollo_JSON": "={{ $json.raw_apollo_json }}",
+            "Idempotency_Key": "={{ $json.idempotency_key }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        -120
+      ],
+      "id": "3ce9f12e-bf55-4130-9f9e-8fc2192f341e",
+      "name": "Upsert Fetched Status",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f306f52d-3ff4-47eb-ba39-c6057055f4e9",
+              "name": "operator_action",
+              "value": "Login required: Open Grok main page, confirm expert mode, then rerun/continue.",
+              "type": "string"
+            },
+            {
+              "id": "f98d01e3-e6d7-46d4-98dd-a8b902f2d1ea",
+              "name": "status",
+              "value": "Login_Required",
+              "type": "string"
+            },
+            {
+              "id": "d64f9e5f-55a1-4cc4-84f8-37f6b5872629",
+              "name": "updated_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -120
+      ],
+      "id": "cd4f6288-7f80-496f-a965-f46db353b36a",
+      "name": "Set Login Action"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Apollo Tracker Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead.email }}",
+            "Status": "={{ $json.status }}",
+            "Operator_Action": "={{ $json.operator_action }}",
+            "Run_ID": "={{ $json.run_id }}",
+            "Updated_At": "={{ $json.updated_at }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        80,
+        -120
+      ],
+      "id": "bc66921b-a92f-45b4-97ba-2c64de5ceeaf",
+      "name": "Upsert Login Action",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.grok_worker_url + '/session-check' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { context: $json } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -120
+      ],
+      "id": "5729ca2a-1b85-4efd-8ad6-cd3cd82252ba",
+      "name": "Session Check"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "57344de9-fb8b-44ec-a39d-02ad4d153f38",
+              "name": "ready",
+              "value": "={{ $json.ready }}",
+              "type": "boolean"
+            },
+            {
+              "id": "7e7cdc95-6abf-4d37-a43a-53872f4ed32d",
+              "name": "reason",
+              "value": "={{ $json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "4c128364-23f8-4dbd-b326-af1c4e9f4f42",
+              "name": "context",
+              "value": "={{ $json.context }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -120
+      ],
+      "id": "5efa20c8-69f8-47f8-a435-cba073688f7a",
+      "name": "Normalize Session Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72f8fd81-ed5c-4e13-b2a6-f306c224f5cf",
+              "leftValue": "={{ $json.ready }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -120
+      ],
+      "id": "f6b5f4d5-d61f-4d69-94b1-cf40f4c9a775",
+      "name": "Session Ready?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8fbd5d2-90d1-418a-9708-27de876d0308",
+              "name": "status",
+              "value": "Failed",
+              "type": "string"
+            },
+            {
+              "id": "0c698fb0-fc4e-4f5d-8f23-6b8e1f278649",
+              "name": "operator_action",
+              "value": "={{ 'Session check failed: ' + $json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "5b6d8fda-a85b-4e73-af16-fb3bc78dc4de",
+              "name": "updated_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "e1810fdd-aa88-4dc7-ac03-e18f2c69ca2d",
+              "name": "lead",
+              "value": "={{ $json.context.lead }}",
+              "type": "object"
+            },
+            {
+              "id": "7ac4cf4d-d5bb-43c7-9f57-051fd5e4573a",
+              "name": "run_id",
+              "value": "={{ $json.context.run_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        40
+      ],
+      "id": "9721698f-9d00-4f98-8d79-7a5ddf4db8f6",
+      "name": "Set Session Failure"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.operator_action }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        40
+      ],
+      "id": "8681472f-dfca-4ed8-a1ff-67e3a76f0f39",
+      "name": "Stop: Session Failure"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a31f8c9d-332d-4dc5-a968-e0cde26ba998",
+              "name": "run_id",
+              "value": "={{ $json.context.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ee2f6d75-c5ce-4e23-872b-df7e8f73f012",
+              "name": "grok_worker_url",
+              "value": "={{ $json.context.grok_worker_url }}",
+              "type": "string"
+            },
+            {
+              "id": "6f3443c2-e95d-45b8-b932-2cf99d58f253",
+              "name": "status",
+              "value": "={{ $json.context.status }}",
+              "type": "string"
+            },
+            {
+              "id": "30124e93-637b-470d-878f-aab9f934f31b",
+              "name": "operator_action",
+              "value": "={{ $json.context.operator_action }}",
+              "type": "string"
+            },
+            {
+              "id": "3ea9cf15-7b50-4a97-95dd-272f0d0178ad",
+              "name": "updated_at",
+              "value": "={{ $json.context.updated_at }}",
+              "type": "string"
+            },
+            {
+              "id": "66b91dbe-dce2-44d1-8215-87efc5d96877",
+              "name": "lead",
+              "value": "={{ $json.context.lead }}",
+              "type": "object"
+            },
+            {
+              "id": "7dd2cf27-188d-42e2-abf1-7fc8cf19a6a3",
+              "name": "idempotency_key",
+              "value": "={{ $json.context.idempotency_key }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        -280
+      ],
+      "id": "ef2c9f11-8f95-4902-b7e4-f27bd5d6015d",
+      "name": "Adopt Session Context"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.grok_worker_url + '/run-stage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { stage: 'research', context: $json } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        -280
+      ],
+      "id": "5f6ec702-f653-4c44-96f4-cf4598b72d4f",
+      "name": "Run Stage 1 Research"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "db08af6d-4308-4079-b329-66d6cae0d3fc",
+              "name": "run_id",
+              "value": "={{ $json.context.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "5554d25d-a9eb-448f-bfda-5d8f3ecbc42e",
+              "name": "grok_worker_url",
+              "value": "={{ $json.context.grok_worker_url }}",
+              "type": "string"
+            },
+            {
+              "id": "6583f5e6-fa09-4989-8da7-309f7feffc5d",
+              "name": "status",
+              "value": "={{ $json.context.status }}",
+              "type": "string"
+            },
+            {
+              "id": "ad254fdd-9214-4079-bf4e-af58d4ff0c5f",
+              "name": "operator_action",
+              "value": "={{ $json.context.operator_action }}",
+              "type": "string"
+            },
+            {
+              "id": "7c4b5f82-a0de-457d-8e3f-7aad9ec0b38f",
+              "name": "updated_at",
+              "value": "={{ $json.context.updated_at }}",
+              "type": "string"
+            },
+            {
+              "id": "c304ec5f-2e31-455f-a9fe-426f5ec8d74a",
+              "name": "lead",
+              "value": "={{ $json.context.lead }}",
+              "type": "object"
+            },
+            {
+              "id": "88d7697a-f91f-4762-a2ff-40675db96bfc",
+              "name": "idempotency_key",
+              "value": "={{ $json.context.idempotency_key }}",
+              "type": "string"
+            },
+            {
+              "id": "e2f3cc4d-5134-46d9-849b-ab554a6ba814",
+              "name": "stage1",
+              "value": "={{ $json.context.stage1 }}",
+              "type": "object"
+            },
+            {
+              "id": "f7f8b841-a7db-42f3-ba95-6727fdb4671c",
+              "name": "previous_output",
+              "value": "={{ $json.context.previous_output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        -280
+      ],
+      "id": "8f11ef58-15b7-40cd-b448-5d5c6129e886",
+      "name": "Adopt Stage 1 Context"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Apollo Tracker Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead.email }}",
+            "Status": "={{ $json.status }}",
+            "Operator_Action": "={{ $json.operator_action }}",
+            "Run_ID": "={{ $json.run_id }}",
+            "Updated_At": "={{ $json.updated_at }}",
+            "Stage1_MD_Path": "={{ $json.stage1.mdPath }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1760,
+        -280
+      ],
+      "id": "13ebf8f6-0e11-4205-a8f7-ff197e535f63",
+      "name": "Upsert Stage 1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.grok_worker_url + '/run-stage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { stage: 'review', context: $json } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        -280
+      ],
+      "id": "e5bdc7d9-8e8f-4650-b986-b355f44d37de",
+      "name": "Run Stage 2 Review"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5f45f34f-9ccd-46fd-b7d2-3f6d6c630f1d",
+              "name": "run_id",
+              "value": "={{ $json.context.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "5635c4a2-5b1c-4647-9b80-cf6d62d88af2",
+              "name": "grok_worker_url",
+              "value": "={{ $json.context.grok_worker_url }}",
+              "type": "string"
+            },
+            {
+              "id": "7fbf52e0-0fd1-47fc-a68c-8e620ecf2a7f",
+              "name": "status",
+              "value": "={{ $json.context.status }}",
+              "type": "string"
+            },
+            {
+              "id": "75f2f35a-c652-472f-8ded-8ca0f0d12e3a",
+              "name": "operator_action",
+              "value": "={{ $json.context.operator_action }}",
+              "type": "string"
+            },
+            {
+              "id": "6059b2bb-2ab9-46f4-986a-db4c1eb9777c",
+              "name": "updated_at",
+              "value": "={{ $json.context.updated_at }}",
+              "type": "string"
+            },
+            {
+              "id": "b8f9f0ec-cf17-4cb3-918f-793f68943730",
+              "name": "lead",
+              "value": "={{ $json.context.lead }}",
+              "type": "object"
+            },
+            {
+              "id": "57a8fbc6-a57a-48cf-977f-6f6b15ec3fb5",
+              "name": "idempotency_key",
+              "value": "={{ $json.context.idempotency_key }}",
+              "type": "string"
+            },
+            {
+              "id": "9f4cf777-f165-4a29-9335-8f558d99b6bf",
+              "name": "stage1",
+              "value": "={{ $json.context.stage1 }}",
+              "type": "object"
+            },
+            {
+              "id": "3d53a46e-f667-4f08-bb50-32bc9381c2d4",
+              "name": "stage2",
+              "value": "={{ $json.context.stage2 }}",
+              "type": "object"
+            },
+            {
+              "id": "cc118883-f2fd-4a2e-95f5-cbf07cf4aa1f",
+              "name": "previous_output",
+              "value": "={{ $json.context.previous_output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        -280
+      ],
+      "id": "d75bb646-f3d9-4fc0-9297-c053154b9682",
+      "name": "Adopt Stage 2 Context"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Apollo Tracker Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead.email }}",
+            "Status": "={{ $json.status }}",
+            "Operator_Action": "={{ $json.operator_action }}",
+            "Run_ID": "={{ $json.run_id }}",
+            "Updated_At": "={{ $json.updated_at }}",
+            "Stage2_MD_Path": "={{ $json.stage2.mdPath }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2480,
+        -280
+      ],
+      "id": "2e5c4d4f-bce5-4fb4-9000-94f5e72af8a4",
+      "name": "Upsert Stage 2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.grok_worker_url + '/run-stage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { stage: 'final_email', context: $json } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2720,
+        -280
+      ],
+      "id": "5a33f3e5-a35d-42c5-acd5-ccf5bdafb07f",
+      "name": "Run Stage 3 Final Email"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ed3f68b6-3424-4372-a4a9-d32cc6e89b36",
+              "name": "run_id",
+              "value": "={{ $json.context.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d84d89be-5937-4fd1-a75e-af7f943ebde9",
+              "name": "grok_worker_url",
+              "value": "={{ $json.context.grok_worker_url }}",
+              "type": "string"
+            },
+            {
+              "id": "a6d7a2ce-78d1-4cd8-bf5d-cc9de175cf75",
+              "name": "status",
+              "value": "={{ $json.context.status }}",
+              "type": "string"
+            },
+            {
+              "id": "2db17e4f-e35c-4d5a-b07e-2fdf31ff5e97",
+              "name": "operator_action",
+              "value": "={{ $json.context.operator_action }}",
+              "type": "string"
+            },
+            {
+              "id": "e0e658b7-c8a4-48d7-b6c8-978a37e89fc2",
+              "name": "updated_at",
+              "value": "={{ $json.context.updated_at }}",
+              "type": "string"
+            },
+            {
+              "id": "a05f4d50-1e95-49f8-aae8-d791c4dd1af0",
+              "name": "lead",
+              "value": "={{ $json.context.lead }}",
+              "type": "object"
+            },
+            {
+              "id": "595f7212-936e-467f-8f76-3b9f321efd9d",
+              "name": "idempotency_key",
+              "value": "={{ $json.context.idempotency_key }}",
+              "type": "string"
+            },
+            {
+              "id": "8f6d11d8-f26d-4de0-a7a3-e9cd1f30ae46",
+              "name": "stage1",
+              "value": "={{ $json.context.stage1 }}",
+              "type": "object"
+            },
+            {
+              "id": "eb662fc5-bff7-4976-a4bd-f0f42d7a2c9e",
+              "name": "stage2",
+              "value": "={{ $json.context.stage2 }}",
+              "type": "object"
+            },
+            {
+              "id": "a9522cf9-b425-4f26-8748-ca76ba0ab815",
+              "name": "stage3",
+              "value": "={{ $json.context.stage3 }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        -280
+      ],
+      "id": "7c45b6d5-cfc8-4830-97a3-590ad5bc71e9",
+      "name": "Adopt Stage 3 Context"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Apollo Tracker Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead.email }}",
+            "Status": "={{ $json.status }}",
+            "Operator_Action": "={{ $json.operator_action }}",
+            "Run_ID": "={{ $json.run_id }}",
+            "Updated_At": "={{ $json.updated_at }}",
+            "Stage3_MD_Path": "={{ $json.stage3.mdPath }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3200,
+        -280
+      ],
+      "id": "076f8e67-f52a-41bf-b3be-4d6938fdca48",
+      "name": "Upsert Stage 3",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "create",
+        "sendTo": "={{ $json.lead.email }}",
+        "subject": "={{ 'Quick question about ' + ($json.lead.organization_name || $json.lead.company || 'your company') }}",
+        "emailType": "text",
+        "message": "={{ $json.stage3.responseText }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3440,
+        -280
+      ],
+      "id": "d2719708-6460-42de-88d8-8d53f74f92bf",
+      "name": "Create Gmail Draft",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "JfJfPJkpQXrgXkQS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8d78091d-cabf-4f9d-9166-f820b299ae95",
+              "name": "status",
+              "value": "Draft_Created",
+              "type": "string"
+            },
+            {
+              "id": "d88a0f39-6f93-452a-845d-f3ce4d8753a0",
+              "name": "updated_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "4fc22567-8697-4c5a-a91f-fcf57f5f96e3",
+              "name": "operator_action",
+              "value": "Draft created successfully. Review in Gmail before sending.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3680,
+        -280
+      ],
+      "id": "1a7d0f81-72cc-4c62-84ff-a43bd8dcb8f3",
+      "name": "Set Draft Created"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Apollo Tracker Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead.email }}",
+            "Status": "={{ $json.status }}",
+            "Operator_Action": "={{ $json.operator_action }}",
+            "Run_ID": "={{ $json.run_id }}",
+            "Updated_At": "={{ $json.updated_at }}",
+            "Draft_ID": "={{ $json.id || $json.threadId || '' }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3920,
+        -280
+      ],
+      "id": "36e082c1-a8c9-4f4d-9227-61ecf13c2ca2",
+      "name": "Upsert Draft Created",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OHd9jke6XO71pkVB",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Apollo Persona Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apollo Persona Search": {
+      "main": [
+        [
+          {
+            "node": "Select One Company Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select One Company Lead": {
+      "main": [
+        [
+          {
+            "node": "Upsert Fetched Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Fetched Status": {
+      "main": [
+        [
+          {
+            "node": "Set Login Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Login Action": {
+      "main": [
+        [
+          {
+            "node": "Upsert Login Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Login Action": {
+      "main": [
+        [
+          {
+            "node": "Session Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Check": {
+      "main": [
+        [
+          {
+            "node": "Normalize Session Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Session Result": {
+      "main": [
+        [
+          {
+            "node": "Session Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Ready?": {
+      "main": [
+        [
+          {
+            "node": "Adopt Session Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Session Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Session Failure": {
+      "main": [
+        [
+          {
+            "node": "Stop: Session Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Session Context": {
+      "main": [
+        [
+          {
+            "node": "Run Stage 1 Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stage 1 Research": {
+      "main": [
+        [
+          {
+            "node": "Adopt Stage 1 Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Stage 1 Context": {
+      "main": [
+        [
+          {
+            "node": "Upsert Stage 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Stage 1": {
+      "main": [
+        [
+          {
+            "node": "Run Stage 2 Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stage 2 Review": {
+      "main": [
+        [
+          {
+            "node": "Adopt Stage 2 Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Stage 2 Context": {
+      "main": [
+        [
+          {
+            "node": "Upsert Stage 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Stage 2": {
+      "main": [
+        [
+          {
+            "node": "Run Stage 3 Final Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stage 3 Final Email": {
+      "main": [
+        [
+          {
+            "node": "Adopt Stage 3 Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Stage 3 Context": {
+      "main": [
+        [
+          {
+            "node": "Upsert Stage 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Stage 3": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Set Draft Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Draft Created": {
+      "main": [
+        [
+          {
+            "node": "Upsert Draft Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d3fca6c4-6a02-4266-87ae-fbd0f8f88f4c",
+  "meta": {
+    "instanceId": "72b34481d564af8d2e0f109882075302fb75ba8698f1e1e1a64dfb88f8264216"
+  },
+  "id": "LeadGenBrowserMode",
+  "tags": []
+}

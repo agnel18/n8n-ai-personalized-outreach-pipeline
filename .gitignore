@@ -1,0 +1,26 @@
+# n8n
+node_modules/
+.n8n/
+
+# Environment
+.env
+.env.local
+client_secrets.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Browser worker and generated artifacts
+automation/.grok-profile/
+automation/.chatgpt-profile/
+docs/output/
+
+# Lead data (PII — NEVER commit real contacts)
+leads.csv
+dataset_*.csv
+dataset_*.xlsx
