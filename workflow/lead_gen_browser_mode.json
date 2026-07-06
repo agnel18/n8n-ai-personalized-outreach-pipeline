@@ -95,7 +95,7 @@
       "name": "Upsert Fetched Status",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -180,7 +180,7 @@
       "name": "Upsert Login Action",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -529,7 +529,7 @@
       "name": "Upsert Stage 1",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -675,7 +675,7 @@
       "name": "Upsert Stage 2",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -821,7 +821,7 @@
       "name": "Upsert Stage 3",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -846,7 +846,7 @@
       "name": "Create Gmail Draft",
       "credentials": {
         "gmailOAuth2": {
-          "id": "JfJfPJkpQXrgXkQS",
+          "id": "REPLACE_WITH_GMAIL_CRED_ID",
           "name": "Gmail account"
         }
       }
@@ -932,7 +932,7 @@
       "name": "Upsert Draft Created",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }

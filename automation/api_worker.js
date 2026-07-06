@@ -16,6 +16,75 @@
 //   API_PROVIDER   xai | openai | generic        (controls how web search is wired)
 //   ENABLE_WEB_SEARCH  true|false                (only the research stage searches)
 // See .env.example for the full list.
+const fs = require('fs');
+const path = require('path');
+
+// ── Auto-load .env ────────────────────────────────────────────────────────────
+// Node doesn't read .env files on its own, so we do it here. This means you can
+// just run `npm run start:api` (or `node api_worker.js`) and the values from your
+// .env file are picked up automatically — no flags to remember, nothing extra to
+// install.
+//
+// We look for a .env next to this file first, then in the folder you ran the
+// command from. Anything already set in your shell (or passed inline) always
+// wins, so this never overrides an explicit setting.
+function loadDotEnv() {
+  const candidates = [
+    path.join(__dirname, '.env'),
+    path.join(process.cwd(), '.env'),
+  ];
+  const envPath = candidates.find((p) => {
+    try {
+      return fs.statSync(p).isFile();
+    } catch {
+      return false;
+    }
+  });
+
+  if (!envPath) {
+    console.log('No .env file found — using existing environment variables as-is.');
+    console.log(`  (Looked in: ${candidates.join('  and  ')})`);
+    return;
+  }
+
+  let raw;
+  try {
+    raw = fs.readFileSync(envPath, 'utf8');
+  } catch (err) {
+    console.log(`Found .env at ${envPath} but could not read it: ${err.message}`);
+    return;
+  }
+
+  let loaded = 0;
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue; // blank line or comment
+    const withoutExport = trimmed.replace(/^export\s+/, '');
+    const eq = withoutExport.indexOf('=');
+    if (eq === -1) continue; // not a KEY=VALUE line
+    const key = withoutExport.slice(0, eq).trim();
+    if (!key) continue;
+    let value = withoutExport.slice(eq + 1).trim();
+    // Strip one layer of matching surrounding quotes, if present.
+    if (
+      value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'")))
+    ) {
+      value = value.slice(1, -1);
+    }
+    // Never overwrite something already set in the real environment.
+    if (!(key in process.env)) {
+      process.env[key] = value;
+      loaded++;
+    }
+  }
+  console.log(`Loaded ${loaded} setting(s) from ${envPath}`);
+}
+
+loadDotEnv();
+// ──────────────────────────────────────────────────────────────────────────────
+
 const express = require('express');
 const {
   loadPromptTemplate,

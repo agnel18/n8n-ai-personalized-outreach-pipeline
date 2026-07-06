@@ -25,7 +25,7 @@
       "name": "Fetch Apollo Contacts",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "hMZtBBguqVRci9hy",
+          "id": "REPLACE_WITH_HEADER_AUTH_CRED_ID",
           "name": "Header Auth account"
         }
       }
@@ -103,7 +103,7 @@
       "name": "Load Contacted Leads",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -146,7 +146,7 @@
       "name": "Grok 4.3",
       "credentials": {
         "openAiApi": {
-          "id": "YLnEaN2tA9dJdCh6",
+          "id": "REPLACE_WITH_OPENAI_CRED_ID",
           "name": "xAI Grok account"
         }
       }
@@ -245,7 +245,7 @@
       "name": "Log Lead to Tracker",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "OHd9jke6XO71pkVB",
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
           "name": "Google Sheets account"
         }
       }
@@ -269,7 +269,7 @@
       "webhookId": "2874455b-ed1e-4790-b812-d5bd844e9c6a",
       "credentials": {
         "gmailOAuth2": {
-          "id": "JfJfPJkpQXrgXkQS",
+          "id": "REPLACE_WITH_GMAIL_CRED_ID",
           "name": "Gmail account"
         }
       }

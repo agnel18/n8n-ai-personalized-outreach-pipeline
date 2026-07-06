@@ -11,8 +11,7 @@
 **Built by Agnel J N (agnel18)**
 
 > 👉 **New here / not a coder?** Start with **[GETTING_STARTED.md](GETTING_STARTED.md)** — a from-scratch,
-> copy-paste walkthrough that gets you to your first email drafts in ~30 minutes. Prefer video? See
-> **[docs/YOUTUBE_SCRIPT.md](docs/YOUTUBE_SCRIPT.md)**.
+> copy-paste walkthrough that gets you to your first email drafts in ~30 minutes.
 
 ---
 
@@ -78,7 +77,6 @@ never breaks on UI changes.
 ai-lead-generation-pipeline-agnel/
 ├── README.md
 ├── SETUP.md
-├── claude.md                     # Build prompt / project brief
 ├── system_prompt_01/02/03.md     # The 3 stage prompts (research / review / email)
 ├── automation/
 │   ├── chatgpt_worker.js         # Browser worker → chatgpts.site (verified)
@@ -91,7 +89,6 @@ ai-lead-generation-pipeline-agnel/
 ├── docs/
 │   ├── CUSTOMIZATION.md          # How to adapt the pipeline to your needs
 │   ├── USE_CASES.md              # Where this pipeline applies (MECE scenarios)
-│   ├── PORTFOLIO.md
 │   ├── PLAN_OF_ACTION.md
 │   ├── MAINTAINING_SELECTORS.md  # How to fix browser selectors when a site changes
 │   └── output/                   # Generated stage markdown (gitignored)
@@ -143,7 +140,7 @@ then **Execute workflow**. Check `docs/output/`, the tracker sheet, and your Gma
 - **API mode** for reliability when browser UIs drift
 - Ready to add: error notifications, per-run cost logging, surfacing failed leads in the tracker
 
-Details in `docs/PORTFOLIO.md` and `claude.md`.
+Details in the docs above and `SETUP.md`.
 
 ---
 
@@ -155,8 +152,6 @@ Details in `docs/PORTFOLIO.md` and `claude.md`.
 | **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)** | Adapt it to your offer, audience, and voice — Config node, the 3 prompts, `leads.csv` |
 | **[docs/USE_CASES.md](docs/USE_CASES.md)** | Where this pipeline applies — MECE scenarios (sales, recruiting, partnerships, and more) |
 | **[docs/MAINTAINING_SELECTORS.md](docs/MAINTAINING_SELECTORS.md)** | Fix browser selectors when a site's HTML changes |
-| **[docs/PORTFOLIO.md](docs/PORTFOLIO.md)** | Portfolio case study — problem, architecture, skills |
-| **[claude.md](claude.md)** | Project brief — architecture and design decisions |
 
 ---
 

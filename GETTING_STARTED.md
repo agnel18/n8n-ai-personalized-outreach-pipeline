@@ -7,8 +7,7 @@ emails sitting in your Gmail drafts, step by step. You'll copy-paste a few comma
 - 💸 **Cost:** free if you use the browser mode; a few cents per lead if you use an OpenAI/Grok API key.
 - 🔒 **Safe by design:** every email is created as a **draft** — nothing is ever sent automatically.
 
-> Prefer a video? See [docs/YOUTUBE_SCRIPT.md](docs/YOUTUBE_SCRIPT.md). Want more depth on any step?
-> [SETUP.md](SETUP.md) has the full reference. To adapt it to your own offer, see
+> Want more depth on any step? [SETUP.md](SETUP.md) has the full reference. To adapt it to your own offer, see
 > [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md).
 
 ---
