@@ -1,11 +1,11 @@
 # Maintaining the browser worker's DOM selectors
 
-**Applies to browser mode only** (`automation/chatgpt_worker.js` → chatgpts.site, and
-`automation/grok_worker.js` → grok2.testingg.in). The **API worker** (`api_worker.js`)
+**Applies to browser mode only** (`automation/chatgpt_worker.js` → https://chatgpt.com/, and
+`automation/grok_worker.js` → https://grok.com/). The **API worker** (`api_worker.js`)
 has no DOM and never needs this — if browser mode keeps breaking, switching to API mode
 is the permanent fix.
 
-Browser mode works by finding elements on a third‑party web UI. Those sites can change
+Browser mode works by finding elements on the website UI. Those sites can change
 their HTML at any time, and when they do, the worker can no longer type the prompt, tell
 when generation finished, or read the reply. This guide shows how to **re‑discover the
 current elements** and **patch the worker** in a few minutes.
@@ -17,7 +17,7 @@ current elements** and **patch the worker** in a few minutes.
 Every run of a stage does four DOM things, each driven by a selector group in the
 `SELECTORS` object near the top of `automation/chatgpt_worker.js`:
 
-| Step | What it needs | `SELECTORS` group | Confirmed value on chatgpts.site |
+| Step | What it needs | `SELECTORS` group | Confirmed value on https://chatgpt.com/ |
 |------|---------------|-------------------|----------------------------------|
 | 1. Type the prompt | the chat input box | `inputs` | `div#prompt-textarea[contenteditable='true']` |
 | 2. Send | press **Enter** (submits) | — (keyboard) | Enter submits; Shift+Enter = newline |
@@ -47,7 +47,7 @@ These are real behaviors we verified — keep them in mind so you don't "fix" th
   full. Read `innerText` instead (the worker's `editorText()` does this).
 - **Large prompts still send on Enter** (~13 KB prompts work fine). A "nothing sent" symptom
   is almost always a wrong `inputs` selector or focus issue, not size.
-- **"Copy message" ≠ "Copy response".** chatgpts.site shows a *Copy message* button while
+- **"Copy message" ≠ "Copy response".** chatgpt.com shows a *Copy message* button while
   streaming and a *Copy response* button only when finished. Match **"Copy response"** —
   matching a generic `*='Copy'` was an old early‑capture bug.
 
@@ -84,7 +84,7 @@ SEND_TEST=1 node inspect_dom.js
 
 Point it elsewhere with env vars if needed:
 ```bash
-TARGET_URL=https://chatgpts.site/ CHATGPT_PROFILE_DIR=./.chatgpt-profile SEND_TEST=1 node inspect_dom.js
+TARGET_URL=https://chatgpt.com/ CHATGPT_PROFILE_DIR=./.chatgpt-profile SEND_TEST=1 node inspect_dom.js
 ```
 
 What to read from the output:

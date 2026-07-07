@@ -1,4 +1,4 @@
-// DOM inspector for the browser worker's target site (chatgpts.site by default).
+// DOM inspector for the browser worker's target site (chatgpt.com by default).
 //
 // Browser mode depends on CSS/DOM selectors that the site can change at any time.
 // When capture breaks, run this to discover the CURRENT selectors, then update the
@@ -10,13 +10,13 @@
 //   SEND_TEST=1 node inspect_dom.js  # also send a probe prompt and watch streaming -> complete
 //
 // Env:
-//   TARGET_URL           default https://chatgpts.site/
+//   TARGET_URL           default https://chatgpt.com/
 //   CHATGPT_PROFILE_DIR  default ./.chatgpt-profile   (reuses your logged-in session)
 //   SEND_TEST=1          send a test prompt and sample the response lifecycle
 const path = require('path');
 const { chromium } = require('playwright');
 
-const URL = process.env.TARGET_URL || 'https://chatgpts.site/';
+const URL = process.env.TARGET_URL || 'https://chatgpt.com/';
 const PROFILE_DIR = process.env.CHATGPT_PROFILE_DIR || path.join(process.cwd(), '.chatgpt-profile');
 const SEND_TEST = /^(1|true|yes|on)$/i.test(String(process.env.SEND_TEST || ''));
 

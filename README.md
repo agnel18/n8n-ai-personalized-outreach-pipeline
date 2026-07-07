@@ -79,8 +79,8 @@ ai-lead-generation-pipeline-agnel/
 ├── SETUP.md
 ├── system_prompt_01/02/03.md     # The 3 stage prompts (research / review / email)
 ├── automation/
-│   ├── chatgpt_worker.js         # Browser worker → chatgpts.site (verified)
-│   ├── grok_worker.js            # Browser worker → grok2.testingg.in
+│   ├── chatgpt_worker.js         # Browser worker → https://chatgpt.com/
+│   ├── grok_worker.js            # Browser worker → https://grok.com/
 │   ├── api_worker.js             # API worker → OpenAI-compatible endpoint (Grok/OpenAI)
 │   ├── worker_shared.js          # Shared pure helpers (prompt build, markdown save)
 │   ├── inspect_dom.js            # Selector inspector for browser modes

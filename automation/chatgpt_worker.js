@@ -1,5 +1,5 @@
 // ChatGPT browser worker — a drop-in alternative to grok_worker.js for when Grok
-// is down. It drives the https://chatgpts.site/ mirror and exposes the SAME HTTP
+// is down. It drives https://chatgpt.com/ and exposes the SAME HTTP
 // API and response shape (/health, /session-check, /new-chat, /run-stage), so the
 // n8n workflow works unchanged — just point grok_worker_url at this worker (it
 // listens on the same default port 8787).
@@ -20,7 +20,7 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 const PORT = process.env.WORKER_PORT || process.env.CHATGPT_WORKER_PORT || process.env.GROK_WORKER_PORT || 8787;
-const CHATGPT_URL = process.env.CHATGPT_URL || 'https://chatgpts.site/';
+const CHATGPT_URL = process.env.CHATGPT_URL || 'https://chatgpt.com/';
 const PROFILE_DIR = process.env.CHATGPT_PROFILE_DIR || path.join(process.cwd(), '.chatgpt-profile');
 const REPO_ROOT = process.env.REPO_ROOT || path.resolve(process.cwd(), '..');
 const OUTPUT_ROOT = process.env.OUTPUT_ROOT || path.join(REPO_ROOT, 'docs', 'output');
@@ -53,7 +53,7 @@ const SELECTORS = {
   ],
   // The "Copy response" button renders on a turn only once its response is
   // COMPLETE — we use its appearance as the "done" signal and read the exact text
-  // it copies from the clipboard. NOTE: chatgpts.site ALSO shows a separate "Copy
+  // it copies from the clipboard. NOTE: chatgpt.com ALSO shows a separate "Copy
   // message" button while streaming, so we must NOT match a loose *='Copy'; that
   // was the early-capture trap. Match "Copy response" only. Last = newest turn.
   copyButtons: [
@@ -61,7 +61,7 @@ const SELECTORS = {
     "button[data-testid='copy-turn-action-button']",
   ],
   // Shown while a response is streaming; its presence means "not done yet". On
-  // chatgpts.site this is the "Stop answering" button (aria-label).
+  // chatgpt.com this is the "Stop answering" button (aria-label).
   stopButtons: [
     "button[aria-label='Stop answering']",
     "button[data-testid='stop-button']",
@@ -150,7 +150,7 @@ function findInput() {
   })();
 }
 
-// The mirror can take a few seconds to mount the editor after navigation, so we
+// The site can take a few seconds to mount the editor after navigation, so we
 // poll (nudging the viewport once) rather than checking a single time.
 async function nudgeViewport() {
   try {
@@ -216,7 +216,7 @@ async function isSessionReady() {
     await dismissOverlays();
     const input = await resolveInput();
     if (!input) {
-      return { ready: false, reason: 'Chat input not found. Log in at chatgpts.site and open a chat.' };
+      return { ready: false, reason: 'Chat input not found. Log in at chatgpt.com and open a chat.' };
     }
     const disabled = await input.getAttribute('aria-disabled');
     if (disabled === 'true') {
@@ -229,7 +229,7 @@ async function isSessionReady() {
 }
 
 // Best-effort switch to a "high" reasoning/model option. UI varies across
-// mirrors, so this is non-fatal — if it can't find the control, set it manually
+// UIs, so this is non-fatal — if it can't find the control, set it manually
 // in the browser once (the persistent profile remembers it).
 async function tryEnableHighMode() {
   try {
@@ -256,8 +256,8 @@ async function tryEnableHighMode() {
 }
 
 // Read the editor's current text. ProseMirror's `.textContent()` misreads as ''
-// even when populated (confirmed on chatgpts.site), so we read `innerText` of the
-// contenteditable and fall back to the hidden mirror <textarea>'s value.
+// even when populated (confirmed on chatgpt.com), so we read `innerText` of the
+// contenteditable and fall back to the hidden fallback <textarea>'s value.
 async function editorText() {
   try {
     return await page.evaluate(() => {
@@ -308,7 +308,7 @@ async function submitPrompt(promptText) {
   // Human-like pause before sending.
   await humanDelay();
 
-  // Physically press Enter (chatgpts.site submits on Enter — confirmed) and then
+  // Physically press Enter (chatgpt.com submits on Enter — confirmed) and then
   // CONFIRM our message was actually sent. `page.keyboard.press` targets the
   // focused editor, which is more reliable than `locator.press` on ProseMirror.
   // The definitive "sent" signal is a NEW user turn appearing (or streaming
@@ -382,7 +382,7 @@ async function countCopyButtons() {
 }
 
 // True while ChatGPT is still generating: the "Stop" button is only present
-// during streaming. If the mirror has no recognizable stop button this always
+// during streaming. If the page has no recognizable stop button this always
 // returns false, and we fall back to text-stability alone.
 async function isStreaming() {
   for (const s of SELECTORS.stopButtons) {
@@ -439,7 +439,7 @@ async function copyLatestResponse() {
 //   2. a NEW turn has appeared since we submitted (more copy buttons OR more
 //      assistant messages than the pre-submit snapshot), AND
 //   3. the latest assistant text has stopped changing for STABLE_MS.
-// Relying on the Copy button alone was the bug: some mirrors render it (or a
+// Relying on the Copy button alone was the bug: some UIs render it (or a
 // generic copy button) the instant the assistant bubble mounts, so we captured
 // partial/empty text and marched on before generation finished. `prior` is the
 // {copy, assistant} snapshot taken before submit. The "Too many requests"
@@ -595,7 +595,7 @@ app.post('/session-check', async (req, res) => {
       ...contextData,
       operator_action: session.ready
         ? 'Session ready. Proceeding.'
-        : 'Login required: open chatgpts.site and complete login/challenge before rerun.',
+        : 'Login required: open chatgpt.com and complete login/challenge before rerun.',
     },
   });
 });
@@ -633,7 +633,7 @@ app.post('/run-stage', (req, res) => enqueue(async () => {
         context: {
           ...contextData,
           status: 'Failed',
-          operator_action: 'Login required: open chatgpts.site, then rerun failed stage.',
+          operator_action: 'Login required: open chatgpt.com, then rerun failed stage.',
         },
       });
     }

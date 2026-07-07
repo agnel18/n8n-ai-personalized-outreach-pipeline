@@ -166,7 +166,7 @@ npm run start:chatgpt
 ```
 
 A visible browser opens. **Log in to ChatGPT, set "high" mode, and keep a chat open.** The worker
-handles the mirror's quirks automatically: prompts are sent with **Enter**, the "Too many requests"
+handles site quirks automatically: prompts are sent with **Enter**, the "Too many requests"
 dialog is dismissed via its **"Got it"** button, and completion is detected when the streaming
 **"Stop answering"** button disappears and the reply text stabilizes.
 
@@ -259,7 +259,7 @@ lead through the full 3-stage pipeline **sequentially**.
   Empty folder = no attachment and the draft is still created. See `assets/README.md`.
 
 > **Scaling caution (browser modes):** `batch_size = 24` means ~72 messages + 24 new chats in one run
-> on the browser mirror — likely to trip login/upgrade/captcha walls. **Start with `batch_size` 5–10**,
+> on browser UI mode — likely to trip login/upgrade/captcha walls. **Start with `batch_size` 5–10**,
 > keep the per-prompt delays, and scale up slowly. API mode has no such limit beyond your rate limits.
 
 ### Apollo-driven browser variant (optional)

@@ -9,8 +9,8 @@ workflow at the worker (`http://host.docker.internal:8787`).
 
 | Script | File | What it does |
 |--------|------|--------------|
-| `npm run start:chatgpt` | `chatgpt_worker.js` | Headed browser → chatgpts.site (verified path) |
-| `npm start` | `grok_worker.js` | Headed browser → grok2.testingg.in |
+| `npm run start:chatgpt` | `chatgpt_worker.js` | Headed browser → https://chatgpt.com/ |
+| `npm start` | `grok_worker.js` | Headed browser → https://grok.com/ |
 | `npm run start:api` | `api_worker.js` | OpenAI-compatible API (xAI Grok / OpenAI). No browser. |
 
 Plus `npm run inspect` (`inspect_dom.js`) — a selector inspector for the browser modes.

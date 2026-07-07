@@ -190,7 +190,7 @@ For every opportunity, include:
 
 * Can start with manual spreadsheet exports
 * Needs approved system/API access
-* Needs third-party data or stakeholder participation
+* Needs external data or stakeholder participation
 * Depends on clean historical data
 * Requires process ownership before automation can work
 

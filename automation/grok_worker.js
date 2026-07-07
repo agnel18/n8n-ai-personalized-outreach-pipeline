@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 const PORT = process.env.GROK_WORKER_PORT || 8787;
-const GROK_URL = process.env.GROK_URL || 'https://grok2.testingg.in/';
+const GROK_URL = process.env.GROK_URL || 'https://grok.com/';
 const PROFILE_DIR = process.env.GROK_PROFILE_DIR || path.join(process.cwd(), '.grok-profile');
 const REPO_ROOT = process.env.REPO_ROOT || path.resolve(process.cwd(), '..');
 const OUTPUT_ROOT = process.env.OUTPUT_ROOT || path.join(REPO_ROOT, 'docs', 'output');
@@ -93,7 +93,7 @@ async function findInput() {
   return null;
 }
 
-// The grok2 mirror sometimes fails to mount the ProseMirror input until the
+// The site can sometimes fail to mount the ProseMirror input until the
 // viewport reflows (manually reproducible by toggling mobile/desktop in
 // devtools). If the input isn't there, nudge the viewport to force a re-render
 // and retry, mimicking that toggle.
@@ -108,7 +108,7 @@ async function nudgeViewport() {
   }
 }
 
-// Wait until the chat input exists AND is visible — the grok2 SPA can take a
+// Wait until the chat input exists AND is visible — the Grok SPA can take a
 // few seconds to mount the ProseMirror editor after a navigation, so polling
 // (with a viewport nudge midway) is far more reliable than a one-shot check.
 async function resolveInput(timeoutMs = 25000) {
@@ -175,7 +175,7 @@ async function tryEnableExpertMode() {
   }
 }
 
-// Transient dialogs (login nudges, "continue" popups) on this Grok mirror put a
+// Transient dialogs (login nudges, "continue" popups) on this Grok page put a
 // full-screen backdrop over the page so that <html> intercepts pointer events
 // and clicks on the editor time out. Press Escape to clear what we can.
 async function dismissOverlays() {
