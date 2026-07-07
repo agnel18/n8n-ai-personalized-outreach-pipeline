@@ -67,6 +67,14 @@ You need **two** Google credentials in n8n:
 
 In Google Cloud Console: create/pick a project → **enable the Google Sheets API and Gmail API**.
 
+> **Where you enter credentials in n8n.** You don't type keys into the nodes — you create each
+> credential **once** and nodes reference it. Two equivalent ways to open the credential form:
+> - **Central:** left sidebar → **Overview → Credentials** tab → **Add credential** (top-right).
+> - **In a node:** open any Gmail/Sheets node → **"Credential to connect with"** dropdown →
+>   **"+ Create new credential"**.
+> Both open the same modal. Create the two credentials below, then bind them to every node using
+> *Assign a credential to every node at once* (further down).
+
 ### Google Sheets via a Service Account (recommended — no repeated OAuth)
 
 OAuth tokens expire and force re-consent. A **Service Account** has no consent screen and no token
