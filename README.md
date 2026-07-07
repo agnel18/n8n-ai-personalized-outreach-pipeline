@@ -117,9 +117,11 @@ npm run start:api       # API — fill automation/.env first (see .env.example)
 
 ### 3. Import the workflow & set credentials
 Import `workflow/lead_gen_xlsx_mode.json`, connect Gmail + Google Sheets, set
-`Config.ai_provider` to the worker you started (`chatgpt` | `grok` | `api`), and drop your
-leads into `leads.csv`. Full steps — including API keys and Google OAuth — are in
-**[SETUP.md](SETUP.md)**.
+`Config.ai_provider` to the worker you started (`chatgpt` | `grok` | `api`), put your tracker
+spreadsheet ID in **`Config.sheet_id`** (set once — all 7 Sheets nodes read it from Config), and
+drop your leads into `leads.csv`. To bind both credentials to every node without opening each one,
+see [SETUP → *Assign a credential to every node at once*](SETUP.md#assign-a-credential-to-every-node-at-once).
+Full steps — including API keys and Google OAuth — are in **[SETUP.md](SETUP.md)**.
 
 ### 4. Run
 Set **`Loop Over Items` batch size = 1** (one lead at a time — the workers are single-session),

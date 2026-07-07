@@ -83,8 +83,28 @@ expiry — configure it once and the Sheets nodes just work.
 
 Personal Gmail can't use a Service Account (that needs Workspace domain-wide delegation), so the
 **Create Gmail Draft** node uses **Gmail OAuth2**. It's a single one-time auth and it only ever
-creates drafts — it never sends. Create the OAuth 2.0 Client ID (Desktop app) in Google Cloud
-Console, download the JSON, and add it as a **Gmail OAuth2** credential in n8n.
+creates drafts — it never sends. Create the OAuth 2.0 Client ID (**Web application**) in Google
+Cloud Console, then paste n8n's **OAuth Redirect URL** — `http://localhost:5678/rest/oauth2-credential/callback`
+— into the client's *Authorized redirect URIs*. Add the Client ID + Secret to a **Gmail OAuth2**
+credential in n8n and click **Connect**. ("Allowed HTTP Request Domains" can stay blank.) This one
+credential serves **both** Gmail nodes.
+
+### Assign a credential to every node at once (no per-node clicking)
+
+The workflow has **7** Google Sheets nodes and **2** Gmail nodes, but only **two** credentials.
+You create each credential **once** — the work is binding it to every node. n8n binds a node to a
+credential **by its ID**, and all Sheets nodes share one placeholder ID (`REPLACE_WITH_GOOGLE_SHEETS_CRED_ID`),
+both Gmail nodes share another (`REPLACE_WITH_GMAIL_CRED_ID`). So bind them all in one shot:
+
+1. Create both credentials (above) and **Save** each.
+2. Open each saved credential and copy its **ID** from the browser URL (`…/credentials/`**`<ID>`**).
+3. In `workflow/lead_gen_xlsx_mode.json`, **find-replace** (once each):
+   `REPLACE_WITH_GOOGLE_SHEETS_CRED_ID` → your Sheets credential ID, and
+   `REPLACE_WITH_GMAIL_CRED_ID` → your Gmail credential ID.
+4. **Then import** the edited JSON. Every node is already bound — you never open a node.
+
+> Prefer not to edit JSON? Import first, then pick the credential from the dropdown in each node.
+> It's the same result, just slower (9 nodes). The find-replace above is the shortcut.
 
 ---
 
@@ -140,7 +160,7 @@ Import **`workflow/lead_gen_xlsx_mode.json`** (the one workflow). Then open the
 | `chatgpt_worker_url` | `http://host.docker.internal:8787` (default; edit only if you changed the port) |
 | `grok_worker_url` | `http://host.docker.internal:8788` |
 | `api_worker_url` | `http://host.docker.internal:8789` |
-| `sheet_id` | Your tracker spreadsheet ID — the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit` |
+| `sheet_id` | Your tracker spreadsheet ID — the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit`. Set it **once here**; all 7 Sheets nodes read it from Config. |
 | `lead_csv_path` | `/home/node/.n8n-files/leads.csv` |
 | `batch_size` | How many fresh leads to attempt per run (start with **1–5**; see §9) |
 | `email_signature` | Plain-text signature appended to each draft |
@@ -148,10 +168,15 @@ Import **`workflow/lead_gen_xlsx_mode.json`** (the one workflow). Then open the
 | `attachment_dir` | `/home/node/.n8n-files/assets/attachments` (optional attachments) |
 | `paused` | `false` (set `true` for a soft no-op run) |
 
-Assign your Google Sheets + Gmail credentials to the relevant nodes.
+Credentials bind to every node in one step if you did the find-replace in
+[§3 → *Assign a credential to every node at once*](#assign-a-credential-to-every-node-at-once)
+before importing. Otherwise, pick your Google Sheets + Gmail credentials from the dropdown in each node.
 
 > `ai_provider` picks which of the three `*_worker_url` fields the workflow calls. Each worker has
 > its own default port, so you only ever change `ai_provider` — the URLs stay as above.
+>
+> **Sheet ID:** you no longer edit it per node — all 7 Sheets nodes read `Config.sheet_id`. Set it
+> once above. (No find-replace needed for the sheet ID; that's only for the two credential IDs in §3.)
 
 ---
 

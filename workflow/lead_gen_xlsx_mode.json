@@ -370,7 +370,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -883,7 +883,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -1396,7 +1396,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -1882,7 +1882,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -2298,7 +2298,7 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -2405,7 +2405,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -2821,7 +2821,7 @@
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "value": "=PASTE_YOUR_LEAD_TRACKER_SHEET_ID",
+          "value": "={{ $('Config').first().json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
