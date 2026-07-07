@@ -124,20 +124,22 @@ or your own list. The pipeline consumes `fullName`, `position`, `organizationNam
 rich `organization*` context fields. Put the file at the repo root as `leads.csv`; Docker Compose
 mounts it into n8n at `/home/node/.n8n-files/leads.csv`.
 
-> No Apollo API call is required for the primary (CSV batch) workflow — the list is read straight
-> from the file. (An Apollo-driven variant, `workflow/lead_gen_browser_mode.json`, exists if you want
-> live persona search; see §8.)
+> No Apollo API call is required — the list is read straight from the file. (Apollo is just one
+> place a CSV can come from; export from wherever you like.)
 
 ---
 
 ## 6. Import the workflow & set the Config node
 
-Import **`workflow/lead_gen_xlsx_mode.json`** (the primary CSV batch workflow). Then open the
+Import **`workflow/lead_gen_xlsx_mode.json`** (the one workflow). Then open the
 **Config** node (first node) and set:
 
 | Field | Value |
 |-------|-------|
-| `grok_worker_url` | `http://host.docker.internal:8787` (how n8n reaches the worker on your host) |
+| `ai_provider` | Which worker to call: `chatgpt` \| `grok` \| `api` (start the matching worker in §7) |
+| `chatgpt_worker_url` | `http://host.docker.internal:8787` (default; edit only if you changed the port) |
+| `grok_worker_url` | `http://host.docker.internal:8788` |
+| `api_worker_url` | `http://host.docker.internal:8789` |
 | `sheet_id` | Your tracker spreadsheet ID — the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit` |
 | `lead_csv_path` | `/home/node/.n8n-files/leads.csv` |
 | `batch_size` | How many fresh leads to attempt per run (start with **1–5**; see §9) |
@@ -148,14 +150,15 @@ Import **`workflow/lead_gen_xlsx_mode.json`** (the primary CSV batch workflow). 
 
 Assign your Google Sheets + Gmail credentials to the relevant nodes.
 
-> The field is named `grok_worker_url` for historical reasons — it points at **whichever** worker you
-> run (ChatGPT, Grok, or API), all on port `8787`.
+> `ai_provider` picks which of the three `*_worker_url` fields the workflow calls. Each worker has
+> its own default port, so you only ever change `ai_provider` — the URLs stay as above.
 
 ---
 
 ## 7. Start a worker
 
-Run exactly **one** worker (they all share port `8787`). Point `Config.grok_worker_url` at it.
+Start the worker that matches `Config.ai_provider`. Each worker has its own default port
+(chatgpt `8787`, grok `8788`, api `8789`), so you can run more than one at a time if you like.
 
 ### 7a. Browser – ChatGPT (verified, free)
 
@@ -179,8 +182,9 @@ ever breaks.
 
 ### 7b. API worker (most reliable — xAI Grok or OpenAI)
 
-The API worker is a **drop-in** replacement: same endpoints, same port, so the workflow is unchanged.
-It makes one OpenAI-compatible API call per stage — no browser, no selectors, no login.
+The API worker is a **drop-in** replacement: same endpoints, so the workflow is unchanged (just
+set `Config.ai_provider = api`). It makes one OpenAI-compatible API call per stage — no browser,
+no selectors, no login.
 
 ```bash
 cd automation
@@ -207,7 +211,7 @@ ENABLE_WEB_SEARCH=false     # gpt-4o isn't a search model; see note below
 # ENABLE_WEB_SEARCH=true
 ```
 
-Confirm it's up: `curl http://localhost:8787/health` → expect `"ready": true`.
+Confirm it's up: `curl http://localhost:8789/health` → expect `"ready": true`.
 
 > **Web search** is applied to the **research** stage only (stages 2–3 work off prior output).
 > Fully supported on **xAI Grok** (Live Search). On **OpenAI** it's best-effort — it needs a
@@ -262,13 +266,6 @@ lead through the full 3-stage pipeline **sequentially**.
 > on browser UI mode — likely to trip login/upgrade/captcha walls. **Start with `batch_size` 5–10**,
 > keep the per-prompt delays, and scale up slowly. API mode has no such limit beyond your rate limits.
 
-### Apollo-driven browser variant (optional)
-
-`workflow/lead_gen_browser_mode.json` pulls Apollo leads by persona + country filter instead of
-reading a CSV, then runs the same 3 stages one company per run. Set `APOLLO_API_KEY`,
-`APOLLO_PERSONA_IDS`, `APOLLO_COUNTRY`, and `GROK_WORKER_URL` in your environment before running.
-Most users should prefer the CSV workflow above.
-
 ---
 
 ## 9. First test run (single lead, end-to-end)
@@ -278,7 +275,7 @@ Prove the whole path works on **one** lead before scaling:
 1. Start your chosen worker (§7) and confirm it's ready
    (browser: logged in + "high" mode; API: `curl /health` → `"ready": true`).
 2. In the **Config** node set **`batch_size = 1`**, and in **Loop Over Items** set **Batch Size = 1**.
-3. Confirm `grok_worker_url`, `sheet_id`, Gmail + Sheets credentials are set.
+3. Confirm `ai_provider` (matches the worker you started), `sheet_id`, Gmail + Sheets credentials are set.
 4. **Execute workflow.**
 5. Verify the results:
    - `docs/output/<date>/<company>/` has **3 markdown files** (Research, Review, Final_Email).

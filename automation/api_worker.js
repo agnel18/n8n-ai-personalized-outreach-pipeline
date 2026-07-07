@@ -1,8 +1,8 @@
 // API worker — a drop-in alternative to the browser workers (chatgpt_worker.js /
 // grok_worker.js) for people who have an LLM API key. It exposes the SAME HTTP API
 // and response shapes (/health, /session-check, /new-chat, /run-stage), so the n8n
-// workflow works unchanged — just point Config.grok_worker_url at this worker (it
-// listens on the same default port 8787) and run `npm run start:api`.
+// workflow works unchanged — select provider "api" in the workflow Config (this
+// worker's default port is 8789) and run `npm run start:api`.
 //
 // Unlike the browser workers, this one drives NO browser: each pipeline stage is a
 // single OpenAI-compatible chat-completions call. Because every stage is stateless
@@ -96,7 +96,7 @@ const {
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-const PORT = process.env.WORKER_PORT || process.env.CHATGPT_WORKER_PORT || process.env.GROK_WORKER_PORT || 8787;
+const PORT = process.env.WORKER_PORT || process.env.API_WORKER_PORT || 8789;
 const API_BASE_URL = (process.env.API_BASE_URL || 'https://api.x.ai/v1').replace(/\/+$/, '');
 const API_KEY = process.env.API_KEY || '';
 const MODEL = process.env.MODEL || 'grok-4.3';

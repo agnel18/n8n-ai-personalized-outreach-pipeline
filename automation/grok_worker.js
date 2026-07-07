@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-const PORT = process.env.GROK_WORKER_PORT || 8787;
+const PORT = process.env.WORKER_PORT || process.env.GROK_WORKER_PORT || 8788;
 const GROK_URL = process.env.GROK_URL || 'https://grok.com/';
 const PROFILE_DIR = process.env.GROK_PROFILE_DIR || path.join(process.cwd(), '.grok-profile');
 const REPO_ROOT = process.env.REPO_ROOT || path.resolve(process.cwd(), '..');

@@ -1,8 +1,8 @@
 // ChatGPT browser worker — a drop-in alternative to grok_worker.js for when Grok
 // is down. It drives https://chatgpt.com/ and exposes the SAME HTTP
 // API and response shape (/health, /session-check, /new-chat, /run-stage), so the
-// n8n workflow works unchanged — just point grok_worker_url at this worker (it
-// listens on the same default port 8787).
+// n8n workflow works unchanged — select provider "chatgpt" in the workflow Config
+// (this worker's default port is 8787).
 //
 // Differences from the Grok worker:
 //   - Input is ChatGPT's ProseMirror editor (#prompt-textarea).
@@ -19,7 +19,7 @@ const { chromium } = require('playwright');
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-const PORT = process.env.WORKER_PORT || process.env.CHATGPT_WORKER_PORT || process.env.GROK_WORKER_PORT || 8787;
+const PORT = process.env.WORKER_PORT || process.env.CHATGPT_WORKER_PORT || 8787;
 const CHATGPT_URL = process.env.CHATGPT_URL || 'https://chatgpt.com/';
 const PROFILE_DIR = process.env.CHATGPT_PROFILE_DIR || path.join(process.cwd(), '.chatgpt-profile');
 const REPO_ROOT = process.env.REPO_ROOT || path.resolve(process.cwd(), '..');

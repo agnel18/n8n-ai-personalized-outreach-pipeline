@@ -1,17 +1,21 @@
 # Pipeline Workers
 
 Local Node/Express workers that perform the AI step for the n8n lead-gen pipeline. n8n is
-the orchestrator; each worker exposes the **same HTTP contract** on port `8787`, so the
-workflow is identical no matter which one you run. Point `Config.grok_worker_url` in the
-workflow at the worker (`http://host.docker.internal:8787`).
+the orchestrator; each worker exposes the **same HTTP contract**, so the workflow is
+identical no matter which one you run. Pick the worker in the workflow's **Config** node via
+`ai_provider` (`chatgpt` | `grok` | `api`); each worker has its own default port so all three
+can run at once.
 
 ## The three workers
 
-| Script | File | What it does |
-|--------|------|--------------|
-| `npm run start:chatgpt` | `chatgpt_worker.js` | Headed browser → https://chatgpt.com/ |
-| `npm start` | `grok_worker.js` | Headed browser → https://grok.com/ |
-| `npm run start:api` | `api_worker.js` | OpenAI-compatible API (xAI Grok / OpenAI). No browser. |
+| Script | File | Default port | What it does |
+|--------|------|--------------|--------------|
+| `npm run start:chatgpt` | `chatgpt_worker.js` | `8787` | Headed browser → https://chatgpt.com/ |
+| `npm start` | `grok_worker.js` | `8788` | Headed browser → https://grok.com/ |
+| `npm run start:api` | `api_worker.js` | `8789` | OpenAI-compatible API (xAI Grok / OpenAI). No browser. |
+
+Set `Config.ai_provider` to match the worker you started (the workflow already maps each
+provider to `http://host.docker.internal:<port>`). Override a port with `WORKER_PORT`.
 
 Plus `npm run inspect` (`inspect_dom.js`) — a selector inspector for the browser modes.
 
@@ -44,7 +48,7 @@ npm run start:api
 
 See **`.env.example`** for the full annotated list. Highlights:
 
-- Shared: `WORKER_PORT` (default `8787`), `REPO_ROOT`, `OUTPUT_ROOT`.
+- Shared: `WORKER_PORT` (overrides the per-worker default `8787`/`8788`/`8789`), `REPO_ROOT`, `OUTPUT_ROOT`.
 - API worker: `API_BASE_URL`, `API_KEY`, `MODEL`, `API_PROVIDER` (`xai|openai|generic`),
   `ENABLE_WEB_SEARCH`, `API_TIMEOUT_MS`.
 - Browser workers: `CHATGPT_URL`, `CHATGPT_PROFILE_DIR`, `CHATGPT_STABLE_MS`,

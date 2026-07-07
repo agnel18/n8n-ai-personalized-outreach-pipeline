@@ -4,11 +4,13 @@ Date: 2026-06-23
 Owner: Agnel J N
 Status: Implemented (see update note)
 
-> **Update:** this was the original **browser-Grok** plan. It's implemented and generalized —
-> the same design now runs on three interchangeable backends (Browser–ChatGPT, Browser–Grok,
-> and an OpenAI-compatible **API worker**), all behind one worker HTTP contract. Where this doc
-> says "Grok web UI", read "the chosen AI backend". Current setup: `README.md` / `SETUP.md`;
-> selector upkeep for browser modes: `docs/MAINTAINING_SELECTORS.md`.
+> **Update (historical doc):** this was the original **browser-Grok, Apollo-sourced** plan. The
+> design was generalized and now ships as a **single** workflow — `workflow/lead_gen_xlsx_mode.json`
+> — that reads leads from a **CSV/XLSX** file (the Apollo-fetch step and its dedicated workflow were
+> removed) and runs on three interchangeable backends selected in the workflow's `Config.ai_provider`
+> (`chatgpt` | `grok` | `api`), each behind the same worker HTTP contract. Where this doc says
+> "Apollo fetch", read "your `leads.csv`"; where it says "Grok web UI", read "the chosen AI backend".
+> Current setup: `README.md` / `SETUP.md`; selector upkeep for browser modes: `docs/MAINTAINING_SELECTORS.md`.
 
 ## 1) Goal
 

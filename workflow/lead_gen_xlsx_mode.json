@@ -29,9 +29,27 @@
               "type": "number"
             },
             {
+              "id": "c0nf1g00-0000-4000-8000-000000000003a",
+              "name": "ai_provider",
+              "value": "chatgpt",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000003b",
+              "name": "chatgpt_worker_url",
+              "value": "http://host.docker.internal:8787",
+              "type": "string"
+            },
+            {
               "id": "c0nf1g00-0000-4000-8000-000000000003",
               "name": "grok_worker_url",
-              "value": "http://host.docker.internal:8787",
+              "value": "http://host.docker.internal:8788",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000003c",
+              "name": "api_worker_url",
+              "value": "http://host.docker.internal:8789",
               "type": "string"
             },
             {
@@ -113,7 +131,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Config').first().json.grok_worker_url + '/session-check' }}\n",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/session-check' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { context: $json } }}",
@@ -260,7 +278,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Config').first().json.grok_worker_url + '/run-stage' }}",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/run-stage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { stage: 'research', context: $('Loop Over Items').item.json } }}",
@@ -767,7 +785,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Config').first().json.grok_worker_url + '/run-stage' }}",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/run-stage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { stage: 'review', context: $('Adopt Stage 1 Context').item.json } }}",
@@ -1280,7 +1298,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Config').first().json.grok_worker_url + '/run-stage' }}",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/run-stage' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { stage: 'final_email', context: $('Adopt Stage 2 Context').item.json } }}",
@@ -2310,7 +2328,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Status-based batch selection (replaces the single-row picker).\n// Reads all CSV leads + the tracker sheet, skips leads already drafted,\n// and emits up to `batch_size` fresh leads — one item each — for the loop.\nconst csvRows = $('Parse CSV').all().map(i => i.json);\nif (!csvRows.length) {\n  throw new Error('CSV produced no rows. Check lead_csv_path / the mounted leads.csv.');\n}\nconst cfg = $('Config').first().json;\n\n// Pause switch: emit nothing so the loop is a clean no-op.\nconst paused = cfg.paused === true || String(cfg.paused).toLowerCase() === 'true';\nif (paused) return [];\n\nconst batchSize = Math.max(1, Number(cfg.batch_size || 10));\n\n// \"Already done\" = tracker rows whose status is Draft_Created.\n// The tracker sheet uses lowercase headers (email, status, ...).\nlet trackerRows = [];\ntry { trackerRows = $('Read Tracker Sheet').all().map(i => i.json); } catch (e) { trackerRows = []; }\nconst done = new Set(\n  trackerRows\n    .filter(r => String(r.status || '').trim() === 'Draft_Created')\n    .map(r => String(r.email || '').trim().toLowerCase())\n    .filter(Boolean)\n);\n\nconst pad = (n) => String(n).padStart(2, '0');\nconst now = new Date();\nconst runId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;\n\nconst seen = new Set();\nconst out = [];\nfor (const row of csvRows) {\n  const email = String(row.email || '').trim();\n  if (!email) continue;\n  const key = email.toLowerCase();\n  if (done.has(key) || seen.has(key)) continue; // skip processed + duplicates\n  seen.add(key);\n\n  const lead = {\n    ...row,\n    name: row.fullName || [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,\n    title: row.position || '',\n    organization_name: row.organizationName || row.company || 'Unknown Company',\n    email,\n    organization_industry: row.organizationIndustry || '',\n    organization_size: row.organizationSize || '',\n    organization_founded_year: row.organizationFoundedYear || '',\n    organization_description: row.organizationDescription || '',\n    organization_specialities: row.organizationSpecialities || '',\n    organization_website: row.organizationWebsite || '',\n    organization_linkedin: row.organizationLinkedinUrl || '',\n    linkedin_url: row.linkedinUrl || '',\n    seniority: row.seniority || '',\n    functional: row.functional || '',\n    phone_numbers: row.phone_numbers || '',\n    all_emails: row.all_emails || '',\n    city: row.city || row.organizationCity || '',\n    state: row.state || row.organizationState || '',\n    country: row.country || row.organizationCountry || '',\n  };\n\n  out.push({ json: {\n    run_id: runId,\n    grok_worker_url: cfg.grok_worker_url || 'http://host.docker.internal:8787',\n    status: 'Fetched',\n    operator_action: `Batch lead ${out.length + 1}/${batchSize}.`,\n    updated_at: new Date().toISOString(),\n    lead,\n    raw_apollo_json: JSON.stringify(lead),\n    idempotency_key: `${key}_${(lead.organization_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${runId.slice(0, 8)}`,\n  } });\n\n  if (out.length >= batchSize) break;\n}\n\nif (!out.length) {\n  // Nothing left to do — surface a clear, non-fatal marker row count of 0.\n  return [];\n}\nreturn out;\n"
+        "jsCode": "// Status-based batch selection (replaces the single-row picker).\n// Reads all CSV leads + the tracker sheet, skips leads already drafted,\n// and emits up to `batch_size` fresh leads — one item each — for the loop.\nconst csvRows = $('Parse CSV').all().map(i => i.json);\nif (!csvRows.length) {\n  throw new Error('CSV produced no rows. Check lead_csv_path / the mounted leads.csv.');\n}\nconst cfg = $('Config').first().json;\n\n// Pause switch: emit nothing so the loop is a clean no-op.\nconst paused = cfg.paused === true || String(cfg.paused).toLowerCase() === 'true';\nif (paused) return [];\n\nconst batchSize = Math.max(1, Number(cfg.batch_size || 10));\n\n// \"Already done\" = tracker rows whose status is Draft_Created.\n// The tracker sheet uses lowercase headers (email, status, ...).\nlet trackerRows = [];\ntry { trackerRows = $('Read Tracker Sheet').all().map(i => i.json); } catch (e) { trackerRows = []; }\nconst done = new Set(\n  trackerRows\n    .filter(r => String(r.status || '').trim() === 'Draft_Created')\n    .map(r => String(r.email || '').trim().toLowerCase())\n    .filter(Boolean)\n);\n\nconst pad = (n) => String(n).padStart(2, '0');\nconst now = new Date();\nconst runId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;\n\nconst seen = new Set();\nconst out = [];\nfor (const row of csvRows) {\n  const email = String(row.email || '').trim();\n  if (!email) continue;\n  const key = email.toLowerCase();\n  if (done.has(key) || seen.has(key)) continue; // skip processed + duplicates\n  seen.add(key);\n\n  const lead = {\n    ...row,\n    name: row.fullName || [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,\n    title: row.position || '',\n    organization_name: row.organizationName || row.company || 'Unknown Company',\n    email,\n    organization_industry: row.organizationIndustry || '',\n    organization_size: row.organizationSize || '',\n    organization_founded_year: row.organizationFoundedYear || '',\n    organization_description: row.organizationDescription || '',\n    organization_specialities: row.organizationSpecialities || '',\n    organization_website: row.organizationWebsite || '',\n    organization_linkedin: row.organizationLinkedinUrl || '',\n    linkedin_url: row.linkedinUrl || '',\n    seniority: row.seniority || '',\n    functional: row.functional || '',\n    phone_numbers: row.phone_numbers || '',\n    all_emails: row.all_emails || '',\n    city: row.city || row.organizationCity || '',\n    state: row.state || row.organizationState || '',\n    country: row.country || row.organizationCountry || '',\n  };\n\n  out.push({ json: {\n    run_id: runId,\n    grok_worker_url: cfg[(cfg.ai_provider || 'chatgpt') + '_worker_url'] || cfg.chatgpt_worker_url || 'http://host.docker.internal:8787',\n    status: 'Fetched',\n    operator_action: `Batch lead ${out.length + 1}/${batchSize}.`,\n    updated_at: new Date().toISOString(),\n    lead,\n    raw_apollo_json: JSON.stringify(lead),\n    idempotency_key: `${key}_${(lead.organization_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${runId.slice(0, 8)}`,\n  } });\n\n  if (out.length >= batchSize) break;\n}\n\nif (!out.length) {\n  // Nothing left to do — surface a clear, non-fatal marker row count of 0.\n  return [];\n}\nreturn out;\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2338,7 +2356,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Config').first().json.grok_worker_url + '/new-chat' }}",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/new-chat' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { context: $('Loop Over Items').item.json } }}",

@@ -100,8 +100,8 @@ the comments in the file show the OpenAI vs Grok values). Then:
 ```bash
 npm run start:api
 ```
-✅ Leave this terminal window **open and running.** In a new terminal, `curl http://localhost:8787/health`
-should say `"ready": true`.
+✅ Leave this terminal window **open and running.** In a new terminal, `curl http://localhost:8789/health`
+should say `"ready": true`. (Then set `Config.ai_provider = api` in the workflow.)
 
 **Option B — Browser mode (free).** No API key; it drives a ChatGPT tab for you.
 ```bash
@@ -110,6 +110,7 @@ npm install
 npm run start:chatgpt
 ```
 A browser window opens — **log into ChatGPT**, set the mode to "high," and leave it open.
+(Then set `Config.ai_provider = chatgpt` in the workflow — that's the default.)
 
 ---
 

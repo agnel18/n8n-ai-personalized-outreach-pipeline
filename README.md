@@ -1,10 +1,10 @@
 # 🤖 AI Lead Generation Pipeline
 
-> Automated B2B outreach pipeline built with **n8n**, an **AI writer of your choice** (ChatGPT / xAI Grok — browser or API), **Apollo.io / CSV**, **Gmail** and **Google Sheets**
+> Automated B2B outreach pipeline built with **n8n**, an **AI writer of your choice** (ChatGPT / xAI Grok — browser or API), a **CSV/XLSX lead list**, **Gmail** and **Google Sheets**
 
 ![n8n](https://img.shields.io/badge/n8n-Automation-orange)
 ![AI](https://img.shields.io/badge/AI-ChatGPT%20%7C%20Grok%20%7C%20OpenAI-black)
-![Apollo.io](https://img.shields.io/badge/Apollo.io-Lead%20Sourcing-purple)
+![Leads](https://img.shields.io/badge/Leads-CSV%20%2F%20XLSX-purple)
 ![Gmail](https://img.shields.io/badge/Gmail-Drafts-red)
 ![Google Sheets](https://img.shields.io/badge/Google%20Sheets-Tracker-green)
 
@@ -33,15 +33,16 @@ tracker, and the final email is created as a **Gmail draft** (never auto-sent �
 ## 🔀 Choose your execution mode
 
 All three modes run the **same workflow and the same prompts** — they differ only in how
-the AI is called. A small local "worker" (Node/Express on port `8787`) does the AI step;
-the n8n workflow talks to it over HTTP. Point `Config.grok_worker_url` at whichever worker
-you run.
+the AI is called. A small local "worker" (Node/Express) does the AI step; the n8n workflow
+talks to it over HTTP. Pick the worker in the workflow's **Config** node via `ai_provider`
+(`chatgpt` | `grok` | `api`) — each worker has its own default port, so you just start the
+matching one.
 
-| Mode | Command | Cost | Web-grounded research | Reliability | Best for |
-|------|---------|------|-----------------------|-------------|----------|
-| **Browser – ChatGPT** ✅ verified | `npm run start:chatgpt` | Free (uses a ChatGPT session) | ✅ high-mode web search | Fragile — depends on site DOM | No API budget |
-| **Browser – Grok** | `npm start` | Free (uses a Grok session) | ✅ | Fragile — depends on site DOM | Grok fans, no API budget |
-| **API** (Grok / OpenAI) | `npm run start:api` | Paid API usage | ✅ (xAI Live Search; OpenAI best-effort) | Robust — stable API contract | Anyone with an API key |
+| Mode | `ai_provider` | Command | Port | Cost | Web-grounded research | Reliability | Best for |
+|------|---------------|---------|------|------|-----------------------|-------------|----------|
+| **Browser – ChatGPT** ✅ verified | `chatgpt` | `npm run start:chatgpt` | `8787` | Free (uses a ChatGPT session) | ✅ high-mode web search | Fragile — depends on site DOM | No API budget |
+| **Browser – Grok** | `grok` | `npm start` | `8788` | Free (uses a Grok session) | ✅ | Fragile — depends on site DOM | Grok fans, no API budget |
+| **API** (Grok / OpenAI) | `api` | `npm run start:api` | `8789` | Paid API usage | ✅ (xAI Live Search; OpenAI best-effort) | Robust — stable API contract | Anyone with an API key |
 
 Browser modes are $0 but break when the site's HTML changes — see
 [docs/MAINTAINING_SELECTORS.md](docs/MAINTAINING_SELECTORS.md). API mode costs a little but
@@ -93,9 +94,7 @@ ai-lead-generation-pipeline-agnel/
 │   ├── MAINTAINING_SELECTORS.md  # How to fix browser selectors when a site changes
 │   └── output/                   # Generated stage markdown (gitignored)
 └── workflow/
-    ├── lead_gen_xlsx_mode.json   # CSV/XLSX batch mode (primary)
-    ├── lead_gen_browser_mode.json
-    └── lead_gen_pipeline.json    # Original simple demo
+    └── lead_gen_xlsx_mode.json   # CSV/XLSX batch mode — the one workflow
 ```
 
 ---
@@ -117,8 +116,8 @@ npm run start:api       # API — fill automation/.env first (see .env.example)
 ```
 
 ### 3. Import the workflow & set credentials
-Import `workflow/lead_gen_xlsx_mode.json`, connect Gmail + Google Sheets, point
-`Config.grok_worker_url` at the worker (`http://host.docker.internal:8787`), and drop your
+Import `workflow/lead_gen_xlsx_mode.json`, connect Gmail + Google Sheets, set
+`Config.ai_provider` to the worker you started (`chatgpt` | `grok` | `api`), and drop your
 leads into `leads.csv`. Full steps — including API keys and Google OAuth — are in
 **[SETUP.md](SETUP.md)**.
 

@@ -17,7 +17,9 @@ your **`leads.csv`**.
 
 ## 1. Choose your AI backend & model
 
-Run one worker (all on port `8787`). No workflow change is needed to switch.
+Start the worker you want, then set `Config.ai_provider` (`chatgpt` | `grok` | `api`) to match — no
+other workflow change is needed. Each worker has its own default port (chatgpt `8787`, grok `8788`,
+api `8789`), so they can run side by side.
 
 - **Browser modes:** run `npm run start:chatgpt` (ChatGPT) or `npm start` (Grok) and log in.
 - **API mode:** edit `automation/.env` (copy from `.env.example`):
@@ -56,7 +58,7 @@ n8n UI — no restart:
 | `batch_size` | How many fresh leads to attempt per run. Start small (1–5). |
 | `email_signature` | Plain-text signature appended to every draft. |
 | `sender_name` | Your name, used in the email. |
-| `grok_worker_url` | Where n8n reaches the worker (`http://host.docker.internal:8787`). Points at any mode. |
+| `ai_provider` | Which worker to call: `chatgpt` \| `grok` \| `api`. The workflow maps each to its `*_worker_url` (ports 8787/8788/8789). |
 | `sheet_id` | Your tracker spreadsheet ID. |
 | `lead_csv_path` | `/home/node/.n8n-files/leads.csv`. |
 | `attachment_dir` | Folder scanned for attachments (`/home/node/.n8n-files/assets/attachments`). |
