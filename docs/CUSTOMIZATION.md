@@ -2,13 +2,13 @@
 
 How to adapt the pipeline to **your** offer, audience, and voice. This is a "change X → edit Y" map.
 Most changes need **no code** — they live in the n8n **Config** node, the three **prompt files**, and
-your **`leads.csv`**.
+your spreadsheet's **`Leads`** tab.
 
 | I want to change… | Edit this |
 |-------------------|-----------|
 | Which AI / model | `automation/.env` (API mode) or which worker you run |
 | Run settings (batch size, signature, sender) | The **Config** node in n8n |
-| **Who** I contact | `leads.csv` |
+| **Who** I contact | The **`Leads`** tab of your spreadsheet |
 | **What** the AI writes (offer, audience, tone, CTA) | `system_prompt_01/02/03.md` |
 | Attachments | `assets/attachments/` |
 | Draft vs. send, web search, output location | See §5–§7 below |
@@ -59,27 +59,30 @@ n8n UI — no restart:
 | `email_signature` | Plain-text signature appended to every draft. |
 | `sender_name` | Your name, used in the email. |
 | `ai_provider` | Which worker to call: `chatgpt` \| `grok` \| `api`. The workflow maps each to its `*_worker_url` (ports 8787/8788/8789). |
-| `sheet_id` | Your tracker spreadsheet ID. |
-| `lead_csv_path` | `/home/node/.n8n-files/leads.csv`. |
+| `sheet_id` | Your spreadsheet ID (holds both tabs). |
+| `leads_tab` | Tab you paste leads into (default `Leads`). |
+| `tracker_tab` | Tab the workflow writes results to (default `Tracker`). |
+| `max_attempts` | Stop retrying a `Failed` lead after this many tries (default 3). |
 | `attachment_dir` | Folder scanned for attachments (`/home/node/.n8n-files/assets/attachments`). |
 | `paused` | `true` = soft no-op run (useful to stage a change safely). |
 
 ---
 
-## 3. Change WHO you target — `leads.csv`
+## 3. Change WHO you target — the `Leads` tab
 
-Swap in your own list at the repo root as `leads.csv` (mounted into n8n at
-`/home/node/.n8n-files/leads.csv`). The pipeline consumes these columns per lead — the more context
-you provide, the better the research stage performs:
+Paste your own list into the spreadsheet's **`Leads`** tab (under the header row). The pipeline
+consumes these columns per lead — the more context you provide, the better the research stage performs:
 
 - **Core:** `fullName`, `email`, `position`, `organizationName`
+- **Identity (used for dedup):** `email` and `linkedinUrl` — a re-scrape that returns the same person
+  under a new email is skipped as long as `linkedinUrl` matches, so keep that column populated
 - **Rich context (recommended):** `organizationWebsite`, `organizationIndustry`, `organizationSize`,
-  `organizationDescription`, `organizationSpecialities`, `city`/`country`, `linkedinUrl`,
+  `organizationDescription`, `organizationSpecialities`, `city`/`country`,
   `organizationLinkedinUrl`, `seniority`, `functional`
 
 Mapping a different export? Rename its columns to match the names above (an Apollo.io or Apify export
-is already close). Then make sure your **tracker sheet header row** contains the same columns plus the
-pipeline columns — see [SETUP.md §4](../SETUP.md).
+is already close). The `Leads` and `Tracker` tabs share the same 25 lead columns; the `Tracker` tab
+adds the pipeline columns — see [SETUP.md §4](../SETUP.md).
 
 ---
 

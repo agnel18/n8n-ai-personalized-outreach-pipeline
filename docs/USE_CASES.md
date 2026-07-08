@@ -94,7 +94,7 @@ Re-engage dormant/churned customers, or expand existing accounts (upsell / renew
 ## Choosing and combining
 
 1. **Pick one objective** (this doc) — it sets the prompts and the CTA.
-2. **Apply orthogonal filters** — industry, region, channel — via your `leads.csv` and ICP language.
+2. **Apply orthogonal filters** — industry, region, channel — via your `Leads` tab and ICP language.
 3. **Adapt** the three prompts + Config per [CUSTOMIZATION.md](CUSTOMIZATION.md).
 4. **Test one lead** end-to-end ([SETUP.md §9](../SETUP.md)) before running a batch.
 

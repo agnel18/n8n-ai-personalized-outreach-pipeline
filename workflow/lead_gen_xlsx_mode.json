@@ -17,15 +17,21 @@
         "assignments": {
           "assignments": [
             {
-              "id": "c0nf1g00-0000-4000-8000-000000000001",
-              "name": "lead_csv_path",
-              "value": "/home/node/.n8n-files/leads.csv",
+              "id": "c0nf1g00-0000-4000-8000-00000000000a",
+              "name": "leads_tab",
+              "value": "Leads",
               "type": "string"
             },
             {
-              "id": "c0nf1g00-0000-4000-8000-000000000002",
-              "name": "lead_row_index",
-              "value": 0,
+              "id": "c0nf1g00-0000-4000-8000-00000000000b",
+              "name": "tracker_tab",
+              "value": "Tracker",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-00000000000c",
+              "name": "max_attempts",
+              "value": 3,
               "type": "number"
             },
             {
@@ -100,33 +106,6 @@
       ],
       "id": "2946bef6-3e7f-409d-aebf-5b8950b13f13",
       "name": "Config"
-    },
-    {
-      "parameters": {
-        "fileSelector": "={{ $('Config').first().json.lead_csv_path }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.readWriteFile",
-      "typeVersion": 1,
-      "position": [
-        -2096,
-        160
-      ],
-      "id": "2a7a55a9-9547-4e31-948c-4b5b1d18dad9",
-      "name": "Read Lead File"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1,
-      "position": [
-        -1888,
-        160
-      ],
-      "id": "507000a6-db9b-4861-a4c9-792d57c85059",
-      "name": "Parse CSV"
     },
     {
       "parameters": {
@@ -375,49 +354,39 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "fullName": "={{ $json.lead.fullName }}",
-            "firstName": "={{ $json.lead.firstName }}",
-            "lastName": "={{ $json.lead.lastName }}",
-            "email": "={{ $json.lead.email }}",
-            "all_emails": "={{ $json.lead.all_emails }}",
-            "phone_numbers": "={{ $json.lead.phone_numbers }}",
-            "position": "={{ $json.lead.position }}",
-            "linkedinUrl": "={{ $json.lead.linkedinUrl }}",
-            "city": "={{ $json.lead.city }}",
-            "state": "={{ $json.lead.state }}",
-            "country": "={{ $json.lead.country }}",
-            "seniority": "={{ $json.lead.seniority }}",
-            "functional": "={{ $json.lead.functional }}",
-            "organizationName": "={{ $json.lead.organizationName }}",
-            "organizationWebsite": "={{ $json.lead.organizationWebsite }}",
-            "organizationLinkedinUrl": "={{ $json.lead.organizationLinkedinUrl }}",
-            "organizationFoundedYear": "={{ $json.lead.organizationFoundedYear }}",
-            "organizationIndustry": "={{ $json.lead.organizationIndustry }}",
-            "organizationSize": "={{ $json.lead.organizationSize }}",
-            "organizationDescription": "={{ $json.lead.organizationDescription }}",
-            "organizationSpecialities": "={{ $json.lead.organizationSpecialities }}",
-            "organizationCity": "={{ $json.lead.organizationCity }}",
-            "organizationState": "={{ $json.lead.organizationState }}",
-            "organizationCountry": "={{ $json.lead.organizationCountry }}",
-            "source": "={{ $json.lead.source }}",
+            "email": "={{ $('Loop Over Items').item.json.lead.email }}",
+            "fullName": "={{ $('Loop Over Items').item.json.lead.fullName }}",
+            "companyName": "={{ $('Loop Over Items').item.json.lead.companyName }}",
+            "companyLinkedinUrl": "={{ $('Loop Over Items').item.json.lead.companyLinkedinUrl }}",
+            "linkedinUrl": "={{ $('Loop Over Items').item.json.lead.linkedinUrl }}",
+            "position": "={{ $('Loop Over Items').item.json.lead.position }}",
+            "emailStatus": "={{ $('Loop Over Items').item.json.lead.emailStatus }}",
             "status": "={{ $json.status }}",
             "operator_action": "={{ $json.operator_action }}",
             "run_id": "={{ $json.run_id }}",
             "updated_at": "={{ $json.updated_at }}",
-            "stage1": "={{ $json.stage1.mdPath }}"
+            "stage1": "={{ $json.stage1.mdPath }}",
+            "attempts": "={{ $('Loop Over Items').item.json.attempts }}"
           },
           "matchingColumns": [
             "email"
           ],
           "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
             {
               "id": "fullName",
               "displayName": "fullName",
@@ -428,8 +397,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "firstName",
-              "displayName": "firstName",
+              "id": "companyName",
+              "displayName": "companyName",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -437,45 +406,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "lastName",
-              "displayName": "lastName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "email",
-              "displayName": "email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "all_emails",
-              "displayName": "all_emails",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "phone_numbers",
-              "displayName": "phone_numbers",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "position",
-              "displayName": "position",
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -492,8 +424,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "city",
-              "displayName": "city",
+              "id": "position",
+              "displayName": "position",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -501,152 +433,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "state",
-              "displayName": "state",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "country",
-              "displayName": "country",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "seniority",
-              "displayName": "seniority",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "functional",
-              "displayName": "functional",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationName",
-              "displayName": "organizationName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationWebsite",
-              "displayName": "organizationWebsite",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationLinkedinUrl",
-              "displayName": "organizationLinkedinUrl",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationFoundedYear",
-              "displayName": "organizationFoundedYear",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationIndustry",
-              "displayName": "organizationIndustry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSize",
-              "displayName": "organizationSize",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationDescription",
-              "displayName": "organizationDescription",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSpecialities",
-              "displayName": "organizationSpecialities",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCity",
-              "displayName": "organizationCity",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationState",
-              "displayName": "organizationState",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCountry",
-              "displayName": "organizationCountry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "operator_action",
-              "displayName": "operator_action",
+              "id": "emailStatus",
+              "displayName": "emailStatus",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -663,8 +451,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "updated_at",
-              "displayName": "updated_at",
+              "id": "operator_action",
+              "displayName": "operator_action",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -681,26 +469,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "grok_worker_url",
-              "displayName": "grok_worker_url",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "lead",
-              "displayName": "lead",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "idempotency_key",
-              "displayName": "idempotency_key",
+              "id": "updated_at",
+              "displayName": "updated_at",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -717,44 +487,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "previous_output",
-              "displayName": "previous_output",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage2",
-              "displayName": "stage2",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage3",
-              "displayName": "stage3",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "message",
-              "displayName": "message",
+              "id": "attempts",
+              "displayName": "attempts",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -888,39 +622,19 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "fullName": "={{ $json.lead.fullName }}",
-            "firstName": "={{ $json.lead.firstName }}",
-            "lastName": "={{ $json.lead.lastName }}",
-            "email": "={{ $json.lead.email }}",
-            "all_emails": "={{ $json.lead.all_emails }}",
-            "phone_numbers": "={{ $json.lead.phone_numbers }}",
-            "position": "={{ $json.lead.position }}",
-            "linkedinUrl": "={{ $json.lead.linkedinUrl }}",
-            "city": "={{ $json.lead.city }}",
-            "state": "={{ $json.lead.state }}",
-            "country": "={{ $json.lead.country }}",
-            "seniority": "={{ $json.lead.seniority }}",
-            "functional": "={{ $json.lead.functional }}",
-            "organizationName": "={{ $json.lead.organizationName }}",
-            "organizationWebsite": "={{ $json.lead.organizationWebsite }}",
-            "organizationLinkedinUrl": "={{ $json.lead.organizationLinkedinUrl }}",
-            "organizationFoundedYear": "={{ $json.lead.organizationFoundedYear }}",
-            "organizationIndustry": "={{ $json.lead.organizationIndustry }}",
-            "organizationSize": "={{ $json.lead.organizationSize }}",
-            "organizationDescription": "={{ $json.lead.organizationDescription }}",
-            "organizationSpecialities": "={{ $json.lead.organizationSpecialities }}",
-            "organizationCity": "={{ $json.lead.organizationCity }}",
-            "organizationState": "={{ $json.lead.organizationState }}",
-            "organizationCountry": "={{ $json.lead.organizationCountry }}",
-            "source": "={{ $json.lead.source }}",
+            "email": "={{ $('Loop Over Items').item.json.lead.email }}",
+            "fullName": "={{ $('Loop Over Items').item.json.lead.fullName }}",
+            "companyName": "={{ $('Loop Over Items').item.json.lead.companyName }}",
+            "companyLinkedinUrl": "={{ $('Loop Over Items').item.json.lead.companyLinkedinUrl }}",
+            "linkedinUrl": "={{ $('Loop Over Items').item.json.lead.linkedinUrl }}",
+            "position": "={{ $('Loop Over Items').item.json.lead.position }}",
+            "emailStatus": "={{ $('Loop Over Items').item.json.lead.emailStatus }}",
             "status": "={{ $json.status }}",
             "operator_action": "={{ $json.operator_action }}",
             "run_id": "={{ $json.run_id }}",
@@ -934,6 +648,15 @@
           "convertFieldsToString": true,
           "schema": [
             {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
               "id": "fullName",
               "displayName": "fullName",
               "required": false,
@@ -943,8 +666,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "firstName",
-              "displayName": "firstName",
+              "id": "companyName",
+              "displayName": "companyName",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -952,45 +675,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "lastName",
-              "displayName": "lastName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "email",
-              "displayName": "email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "all_emails",
-              "displayName": "all_emails",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "phone_numbers",
-              "displayName": "phone_numbers",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "position",
-              "displayName": "position",
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1007,8 +693,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "city",
-              "displayName": "city",
+              "id": "position",
+              "displayName": "position",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1016,152 +702,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "state",
-              "displayName": "state",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "country",
-              "displayName": "country",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "seniority",
-              "displayName": "seniority",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "functional",
-              "displayName": "functional",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationName",
-              "displayName": "organizationName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationWebsite",
-              "displayName": "organizationWebsite",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationLinkedinUrl",
-              "displayName": "organizationLinkedinUrl",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationFoundedYear",
-              "displayName": "organizationFoundedYear",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationIndustry",
-              "displayName": "organizationIndustry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSize",
-              "displayName": "organizationSize",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationDescription",
-              "displayName": "organizationDescription",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSpecialities",
-              "displayName": "organizationSpecialities",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCity",
-              "displayName": "organizationCity",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationState",
-              "displayName": "organizationState",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCountry",
-              "displayName": "organizationCountry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "operator_action",
-              "displayName": "operator_action",
+              "id": "emailStatus",
+              "displayName": "emailStatus",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1178,8 +720,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "updated_at",
-              "displayName": "updated_at",
+              "id": "operator_action",
+              "displayName": "operator_action",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1196,44 +738,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "grok_worker_url",
-              "displayName": "grok_worker_url",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "lead",
-              "displayName": "lead",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "idempotency_key",
-              "displayName": "idempotency_key",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage1",
-              "displayName": "stage1",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "previous_output",
-              "displayName": "previous_output",
+              "id": "updated_at",
+              "displayName": "updated_at",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1243,33 +749,6 @@
             {
               "id": "stage2",
               "displayName": "stage2",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage3",
-              "displayName": "stage3",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "message",
-              "displayName": "message",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1401,39 +880,19 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "fullName": "={{ $json.lead.fullName }}",
-            "firstName": "={{ $json.lead.firstName }}",
-            "lastName": "={{ $json.lead.lastName }}",
-            "email": "={{ $json.lead.email }}",
-            "all_emails": "={{ $json.lead.all_emails }}",
-            "phone_numbers": "={{ $json.lead.phone_numbers }}",
-            "position": "={{ $json.lead.position }}",
-            "linkedinUrl": "={{ $json.lead.linkedinUrl }}",
-            "city": "={{ $json.lead.city }}",
-            "state": "={{ $json.lead.state }}",
-            "country": "={{ $json.lead.country }}",
-            "seniority": "={{ $json.lead.seniority }}",
-            "functional": "={{ $json.lead.functional }}",
-            "organizationName": "={{ $json.lead.organizationName }}",
-            "organizationWebsite": "={{ $json.lead.organizationWebsite }}",
-            "organizationLinkedinUrl": "={{ $json.lead.organizationLinkedinUrl }}",
-            "organizationFoundedYear": "={{ $json.lead.organizationFoundedYear }}",
-            "organizationIndustry": "={{ $json.lead.organizationIndustry }}",
-            "organizationSize": "={{ $json.lead.organizationSize }}",
-            "organizationDescription": "={{ $json.lead.organizationDescription }}",
-            "organizationSpecialities": "={{ $json.lead.organizationSpecialities }}",
-            "organizationCity": "={{ $json.lead.organizationCity }}",
-            "organizationState": "={{ $json.lead.organizationState }}",
-            "organizationCountry": "={{ $json.lead.organizationCountry }}",
-            "source": "={{ $json.lead.source }}",
+            "email": "={{ $('Loop Over Items').item.json.lead.email }}",
+            "fullName": "={{ $('Loop Over Items').item.json.lead.fullName }}",
+            "companyName": "={{ $('Loop Over Items').item.json.lead.companyName }}",
+            "companyLinkedinUrl": "={{ $('Loop Over Items').item.json.lead.companyLinkedinUrl }}",
+            "linkedinUrl": "={{ $('Loop Over Items').item.json.lead.linkedinUrl }}",
+            "position": "={{ $('Loop Over Items').item.json.lead.position }}",
+            "emailStatus": "={{ $('Loop Over Items').item.json.lead.emailStatus }}",
             "status": "={{ $json.status }}",
             "operator_action": "={{ $json.operator_action }}",
             "run_id": "={{ $json.run_id }}",
@@ -1447,6 +906,15 @@
           "convertFieldsToString": true,
           "schema": [
             {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
               "id": "fullName",
               "displayName": "fullName",
               "required": false,
@@ -1456,8 +924,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "firstName",
-              "displayName": "firstName",
+              "id": "companyName",
+              "displayName": "companyName",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1465,45 +933,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "lastName",
-              "displayName": "lastName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "email",
-              "displayName": "email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "all_emails",
-              "displayName": "all_emails",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "phone_numbers",
-              "displayName": "phone_numbers",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "position",
-              "displayName": "position",
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1520,8 +951,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "city",
-              "displayName": "city",
+              "id": "position",
+              "displayName": "position",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1529,152 +960,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "state",
-              "displayName": "state",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "country",
-              "displayName": "country",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "seniority",
-              "displayName": "seniority",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "functional",
-              "displayName": "functional",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationName",
-              "displayName": "organizationName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationWebsite",
-              "displayName": "organizationWebsite",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationLinkedinUrl",
-              "displayName": "organizationLinkedinUrl",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationFoundedYear",
-              "displayName": "organizationFoundedYear",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationIndustry",
-              "displayName": "organizationIndustry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSize",
-              "displayName": "organizationSize",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationDescription",
-              "displayName": "organizationDescription",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSpecialities",
-              "displayName": "organizationSpecialities",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCity",
-              "displayName": "organizationCity",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationState",
-              "displayName": "organizationState",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCountry",
-              "displayName": "organizationCountry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "operator_action",
-              "displayName": "operator_action",
+              "id": "emailStatus",
+              "displayName": "emailStatus",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1691,8 +978,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "updated_at",
-              "displayName": "updated_at",
+              "id": "operator_action",
+              "displayName": "operator_action",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1709,53 +996,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "grok_worker_url",
-              "displayName": "grok_worker_url",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "lead",
-              "displayName": "lead",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "idempotency_key",
-              "displayName": "idempotency_key",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage1",
-              "displayName": "stage1",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "previous_output",
-              "displayName": "previous_output",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage2",
-              "displayName": "stage2",
+              "id": "updated_at",
+              "displayName": "updated_at",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1765,24 +1007,6 @@
             {
               "id": "stage3",
               "displayName": "stage3",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "message",
-              "displayName": "message",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1887,39 +1111,19 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "fullName": "={{ $json.lead.fullName }}",
-            "firstName": "={{ $json.lead.firstName }}",
-            "lastName": "={{ $json.lead.lastName }}",
-            "email": "={{ $('Format Email').item.json.recipient }}",
-            "all_emails": "={{ $json.lead.all_emails }}",
-            "phone_numbers": "={{ $json.lead.phone_numbers }}",
-            "position": "={{ $json.lead.position }}",
-            "linkedinUrl": "={{ $json.lead.linkedinUrl }}",
-            "city": "={{ $json.lead.city }}",
-            "state": "={{ $json.lead.state }}",
-            "country": "={{ $json.lead.country }}",
-            "seniority": "={{ $json.lead.seniority }}",
-            "functional": "={{ $json.lead.functional }}",
-            "organizationName": "={{ $json.lead.organizationName }}",
-            "organizationWebsite": "={{ $json.lead.organizationWebsite }}",
-            "organizationLinkedinUrl": "={{ $json.lead.organizationLinkedinUrl }}",
-            "organizationFoundedYear": "={{ $json.lead.organizationFoundedYear }}",
-            "organizationIndustry": "={{ $json.lead.organizationIndustry }}",
-            "organizationSize": "={{ $json.lead.organizationSize }}",
-            "organizationDescription": "={{ $json.lead.organizationDescription }}",
-            "organizationSpecialities": "={{ $json.lead.organizationSpecialities }}",
-            "organizationCity": "={{ $json.lead.organizationCity }}",
-            "organizationState": "={{ $json.lead.organizationState }}",
-            "organizationCountry": "={{ $json.lead.organizationCountry }}",
-            "source": "={{ $json.lead.source }}",
+            "email": "={{ $('Loop Over Items').item.json.lead.email }}",
+            "fullName": "={{ $('Loop Over Items').item.json.lead.fullName }}",
+            "companyName": "={{ $('Loop Over Items').item.json.lead.companyName }}",
+            "companyLinkedinUrl": "={{ $('Loop Over Items').item.json.lead.companyLinkedinUrl }}",
+            "linkedinUrl": "={{ $('Loop Over Items').item.json.lead.linkedinUrl }}",
+            "position": "={{ $('Loop Over Items').item.json.lead.position }}",
+            "emailStatus": "={{ $('Loop Over Items').item.json.lead.emailStatus }}",
             "status": "Draft_Created",
             "operator_action": "Draft created. Review in Gmail before sending.",
             "run_id": "={{ $('Format Email').item.json.run_id }}",
@@ -1933,6 +1137,15 @@
           "convertFieldsToString": true,
           "schema": [
             {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
               "id": "fullName",
               "displayName": "fullName",
               "required": false,
@@ -1942,8 +1155,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "firstName",
-              "displayName": "firstName",
+              "id": "companyName",
+              "displayName": "companyName",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -1951,45 +1164,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "lastName",
-              "displayName": "lastName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "email",
-              "displayName": "email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "all_emails",
-              "displayName": "all_emails",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "phone_numbers",
-              "displayName": "phone_numbers",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "position",
-              "displayName": "position",
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2006,8 +1182,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "city",
-              "displayName": "city",
+              "id": "position",
+              "displayName": "position",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2015,152 +1191,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "state",
-              "displayName": "state",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "country",
-              "displayName": "country",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "seniority",
-              "displayName": "seniority",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "functional",
-              "displayName": "functional",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationName",
-              "displayName": "organizationName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationWebsite",
-              "displayName": "organizationWebsite",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationLinkedinUrl",
-              "displayName": "organizationLinkedinUrl",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationFoundedYear",
-              "displayName": "organizationFoundedYear",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationIndustry",
-              "displayName": "organizationIndustry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSize",
-              "displayName": "organizationSize",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationDescription",
-              "displayName": "organizationDescription",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSpecialities",
-              "displayName": "organizationSpecialities",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCity",
-              "displayName": "organizationCity",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationState",
-              "displayName": "organizationState",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCountry",
-              "displayName": "organizationCountry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "operator_action",
-              "displayName": "operator_action",
+              "id": "emailStatus",
+              "displayName": "emailStatus",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2177,8 +1209,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "updated_at",
-              "displayName": "updated_at",
+              "id": "operator_action",
+              "displayName": "operator_action",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2195,62 +1227,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "grok_worker_url",
-              "displayName": "grok_worker_url",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "lead",
-              "displayName": "lead",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "idempotency_key",
-              "displayName": "idempotency_key",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage1",
-              "displayName": "stage1",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "previous_output",
-              "displayName": "previous_output",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage2",
-              "displayName": "stage2",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage3",
-              "displayName": "stage3",
+              "id": "updated_at",
+              "displayName": "updated_at",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2260,15 +1238,6 @@
             {
               "id": "id",
               "displayName": "id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "message",
-              "displayName": "message",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2303,10 +1272,8 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "options": {}
       },
@@ -2328,7 +1295,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Status-based batch selection (replaces the single-row picker).\n// Reads all CSV leads + the tracker sheet, skips leads already drafted,\n// and emits up to `batch_size` fresh leads — one item each — for the loop.\nconst csvRows = $('Parse CSV').all().map(i => i.json);\nif (!csvRows.length) {\n  throw new Error('CSV produced no rows. Check lead_csv_path / the mounted leads.csv.');\n}\nconst cfg = $('Config').first().json;\n\n// Pause switch: emit nothing so the loop is a clean no-op.\nconst paused = cfg.paused === true || String(cfg.paused).toLowerCase() === 'true';\nif (paused) return [];\n\nconst batchSize = Math.max(1, Number(cfg.batch_size || 10));\n\n// \"Already done\" = tracker rows whose status is Draft_Created.\n// The tracker sheet uses lowercase headers (email, status, ...).\nlet trackerRows = [];\ntry { trackerRows = $('Read Tracker Sheet').all().map(i => i.json); } catch (e) { trackerRows = []; }\nconst done = new Set(\n  trackerRows\n    .filter(r => String(r.status || '').trim() === 'Draft_Created')\n    .map(r => String(r.email || '').trim().toLowerCase())\n    .filter(Boolean)\n);\n\nconst pad = (n) => String(n).padStart(2, '0');\nconst now = new Date();\nconst runId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;\n\nconst seen = new Set();\nconst out = [];\nfor (const row of csvRows) {\n  const email = String(row.email || '').trim();\n  if (!email) continue;\n  const key = email.toLowerCase();\n  if (done.has(key) || seen.has(key)) continue; // skip processed + duplicates\n  seen.add(key);\n\n  const lead = {\n    ...row,\n    name: row.fullName || [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,\n    title: row.position || '',\n    organization_name: row.organizationName || row.company || 'Unknown Company',\n    email,\n    organization_industry: row.organizationIndustry || '',\n    organization_size: row.organizationSize || '',\n    organization_founded_year: row.organizationFoundedYear || '',\n    organization_description: row.organizationDescription || '',\n    organization_specialities: row.organizationSpecialities || '',\n    organization_website: row.organizationWebsite || '',\n    organization_linkedin: row.organizationLinkedinUrl || '',\n    linkedin_url: row.linkedinUrl || '',\n    seniority: row.seniority || '',\n    functional: row.functional || '',\n    phone_numbers: row.phone_numbers || '',\n    all_emails: row.all_emails || '',\n    city: row.city || row.organizationCity || '',\n    state: row.state || row.organizationState || '',\n    country: row.country || row.organizationCountry || '',\n  };\n\n  out.push({ json: {\n    run_id: runId,\n    grok_worker_url: cfg[(cfg.ai_provider || 'chatgpt') + '_worker_url'] || cfg.chatgpt_worker_url || 'http://host.docker.internal:8787',\n    status: 'Fetched',\n    operator_action: `Batch lead ${out.length + 1}/${batchSize}.`,\n    updated_at: new Date().toISOString(),\n    lead,\n    raw_apollo_json: JSON.stringify(lead),\n    idempotency_key: `${key}_${(lead.organization_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${runId.slice(0, 8)}`,\n  } });\n\n  if (out.length >= batchSize) break;\n}\n\nif (!out.length) {\n  // Nothing left to do — surface a clear, non-fatal marker row count of 0.\n  return [];\n}\nreturn out;\n"
+        "jsCode": "// Status-based batch selection. Source of leads = \"Leads\" tab (Apify/Apollo export\n// schema). Source of state = \"Tracker\" tab. Emits up to batch_size fresh leads.\nconst cfg = $('Config').first().json;\n\nconst paused = cfg.paused === true || String(cfg.paused).toLowerCase() === 'true';\nif (paused) return [];\n\nconst leadRows = $('Read Leads Tab').all().map(i => i.json);\nif (!leadRows.length) {\n  throw new Error('Leads tab returned 0 rows. Check Config.sheet_id, Config.leads_tab, and Sheets credential access.');\n}\n\nconst batchSize = Math.max(1, Number(cfg.batch_size || 10));\nconst maxAttempts = Math.max(1, Number(cfg.max_attempts || 3));\n\nconst str = (v) => (v === null || v === undefined) ? '' : String(v);\nconst norm = (s) => str(s).trim().toLowerCase();\nconst normLi = (s) => norm(s).replace(/^https?:\\/\\/(www\\.)?/, '').replace(/\\/+$/, '');\n// Apify flattens list fields to companyIndustry/0, companyIndustry/1, ... - recombine them.\nconst joinArr = (row, prefix) => {\n  const out = [];\n  for (let i = 0; i < 40; i++) {\n    const v = str(row[`${prefix}/${i}`]).trim();\n    if (v) out.push(v);\n  }\n  return out.join(', ');\n};\n\nlet trackerRows = [];\ntry { trackerRows = $('Read Tracker Sheet').all().map(i => i.json); } catch (e) { trackerRows = []; }\nconst trackerByEmail = new Map(trackerRows.map(r => [norm(r.email), r]));\n\nconst TERMINAL = new Set(['Draft_Created', 'Skip', 'Do_Not_Contact', 'Unsubscribed']);\nconst doneEmail = new Set();\nconst doneLi = new Set();\nfor (const r of trackerRows) {\n  const status = String(r.status || '').trim();\n  const burnt = status === 'Failed' && Number(r.attempts || 0) >= maxAttempts;\n  if (!TERMINAL.has(status) && !burnt) continue;\n  const e = norm(r.email); if (e) doneEmail.add(e);\n  const l = normLi(r.linkedinUrl); if (l) doneLi.add(l);\n}\n\nconst pad = (n) => String(n).padStart(2, '0');\nconst now = new Date();\nconst runId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;\n\nconst seenEmail = new Set();\nconst seenLi = new Set();\nconst out = [];\nfor (const raw of leadRows) {\n  const row = {};\n  for (const [k, v] of Object.entries(raw)) row[k] = str(v);\n\n  const email = str(row.email).trim();\n  if (!email) continue;\n  const key = email.toLowerCase();\n  const li = normLi(row.linkedinUrl);\n\n  if (doneEmail.has(key) || seenEmail.has(key)) continue;\n  if (li && (doneLi.has(li) || seenLi.has(li))) continue;\n  seenEmail.add(key);\n  if (li) seenLi.add(li);\n\n  const attempts = Number(trackerByEmail.get(key)?.attempts || 0) + 1;\n\n  // ...row keeps every original Apify column on the lead (used by Tracker writeback\n  // and available to the AI). The snake_case aliases below are what the prompts read.\n  const lead = {\n    ...row,\n    name: row.fullName || [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,\n    title: row.position || row.title || '',\n    organization_name: row.companyName || 'Unknown Company',\n    email,\n    organization_industry: joinArr(row, 'companyIndustry') || '',\n    organization_size: row.companySizeRange || row.companySize || '',\n    organization_founded_year: row.foundedYear || '',\n    organization_description: row.companyDescription || '',\n    organization_specialities: joinArr(row, 'companySpecialties') || '',\n    organization_website: row.companyDomain || '',\n    organization_linkedin: row.companyLinkedinUrl || '',\n    linkedin_url: row.linkedinUrl || '',\n    seniority: row.seniority || '',\n    functional: row.functional || joinArr(row, 'functions') || '',\n    phone_numbers: row.phone || '',\n    all_emails: email,\n    city: row.personCity || row.companyCity || '',\n    state: row.personState || row.companyState || '',\n    country: row.personCountry || row.companyCountry || '',\n    // Extra Apify signals the research stage can use.\n    annual_revenue: row.annualRevenue || '',\n    total_funding: row.totalFunding || '',\n    funding_stage: row.fundingStage || '',\n    technologies: joinArr(row, 'technologies') || '',\n    company_audience: row.companyAudience || '',\n    email_status: row.emailStatus || '',\n  };\n\n  out.push({ json: {\n    run_id: runId,\n    grok_worker_url: cfg[(cfg.ai_provider || 'chatgpt') + '_worker_url'] || cfg.chatgpt_worker_url || 'http://host.docker.internal:8787',\n    status: 'Fetched',\n    operator_action: `Batch lead ${out.length + 1}/${batchSize}.`,\n    updated_at: new Date().toISOString(),\n    attempts,\n    lead,\n    raw_apollo_json: JSON.stringify(lead),\n    idempotency_key: `${key}_${(lead.organization_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,\n  } });\n\n  if (out.length >= batchSize) break;\n}\n\nreturn out;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2410,43 +1377,24 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "fullName": "={{ $json.lead.fullName }}",
-            "firstName": "={{ $json.lead.firstName }}",
-            "lastName": "={{ $json.lead.lastName }}",
             "email": "={{ $('Loop Over Items').item.json.lead.email }}",
-            "all_emails": "={{ $json.lead.all_emails }}",
-            "phone_numbers": "={{ $json.lead.phone_numbers }}",
-            "position": "={{ $json.lead.position }}",
-            "linkedinUrl": "={{ $json.lead.linkedinUrl }}",
-            "city": "={{ $json.lead.city }}",
-            "state": "={{ $json.lead.state }}",
-            "country": "={{ $json.lead.country }}",
-            "seniority": "={{ $json.lead.seniority }}",
-            "functional": "={{ $json.lead.functional }}",
-            "organizationName": "={{ $json.lead.organizationName }}",
-            "organizationWebsite": "={{ $json.lead.organizationWebsite }}",
-            "organizationLinkedinUrl": "={{ $json.lead.organizationLinkedinUrl }}",
-            "organizationFoundedYear": "={{ $json.lead.organizationFoundedYear }}",
-            "organizationIndustry": "={{ $json.lead.organizationIndustry }}",
-            "organizationSize": "={{ $json.lead.organizationSize }}",
-            "organizationDescription": "={{ $json.lead.organizationDescription }}",
-            "organizationSpecialities": "={{ $json.lead.organizationSpecialities }}",
-            "organizationCity": "={{ $json.lead.organizationCity }}",
-            "organizationState": "={{ $json.lead.organizationState }}",
-            "organizationCountry": "={{ $json.lead.organizationCountry }}",
-            "source": "={{ $json.lead.source }}",
+            "fullName": "={{ $('Loop Over Items').item.json.lead.fullName }}",
+            "companyName": "={{ $('Loop Over Items').item.json.lead.companyName }}",
+            "companyLinkedinUrl": "={{ $('Loop Over Items').item.json.lead.companyLinkedinUrl }}",
+            "linkedinUrl": "={{ $('Loop Over Items').item.json.lead.linkedinUrl }}",
+            "position": "={{ $('Loop Over Items').item.json.lead.position }}",
+            "emailStatus": "={{ $('Loop Over Items').item.json.lead.emailStatus }}",
             "status": "Failed",
-            "operator_action": "={{ 'Stage failed: ' + ($json.error?.message || $json.error || 'unknown error') }}",
+            "operator_action": "={{ 'Stage failed: ' + (typeof $json.error === 'string' ? $json.error : ($json.error?.message || JSON.stringify($json.error ?? null))) }}",
             "run_id": "={{ $('Loop Over Items').item.json.run_id }}",
-            "updated_at": "={{ $now.toISO() }}"
+            "updated_at": "={{ $now.toISO() }}",
+            "attempts": "={{ $('Loop Over Items').item.json.attempts }}"
           },
           "matchingColumns": [
             "email"
@@ -2454,6 +1402,15 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": true,
           "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
             {
               "id": "fullName",
               "displayName": "fullName",
@@ -2464,8 +1421,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "firstName",
-              "displayName": "firstName",
+              "id": "companyName",
+              "displayName": "companyName",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2473,45 +1430,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "lastName",
-              "displayName": "lastName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "email",
-              "displayName": "email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "all_emails",
-              "displayName": "all_emails",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "phone_numbers",
-              "displayName": "phone_numbers",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "position",
-              "displayName": "position",
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2528,8 +1448,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "city",
-              "displayName": "city",
+              "id": "position",
+              "displayName": "position",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2537,152 +1457,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "state",
-              "displayName": "state",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "country",
-              "displayName": "country",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "seniority",
-              "displayName": "seniority",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "functional",
-              "displayName": "functional",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationName",
-              "displayName": "organizationName",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationWebsite",
-              "displayName": "organizationWebsite",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationLinkedinUrl",
-              "displayName": "organizationLinkedinUrl",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationFoundedYear",
-              "displayName": "organizationFoundedYear",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationIndustry",
-              "displayName": "organizationIndustry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSize",
-              "displayName": "organizationSize",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationDescription",
-              "displayName": "organizationDescription",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationSpecialities",
-              "displayName": "organizationSpecialities",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCity",
-              "displayName": "organizationCity",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationState",
-              "displayName": "organizationState",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "organizationCountry",
-              "displayName": "organizationCountry",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "operator_action",
-              "displayName": "operator_action",
+              "id": "emailStatus",
+              "displayName": "emailStatus",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2699,8 +1475,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "updated_at",
-              "displayName": "updated_at",
+              "id": "operator_action",
+              "displayName": "operator_action",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2717,8 +1493,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "grok_worker_url",
-              "displayName": "grok_worker_url",
+              "id": "updated_at",
+              "displayName": "updated_at",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2726,71 +1502,8 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "lead",
-              "displayName": "lead",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "idempotency_key",
-              "displayName": "idempotency_key",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage1",
-              "displayName": "stage1",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "previous_output",
-              "displayName": "previous_output",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage2",
-              "displayName": "stage2",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "stage3",
-              "displayName": "stage3",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "message",
-              "displayName": "message",
+              "id": "attempts",
+              "displayName": "attempts",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -2826,10 +1539,8 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TRACKER_SHEET_ID/edit#gid=0"
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
         },
         "options": {}
       },
@@ -2934,6 +1645,36 @@
         }
       },
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.leads_tab }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2096,
+        160
+      ],
+      "id": "a5e0-0000-4000-8000-00000000000f",
+      "name": "Read Leads Tab",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CRED_ID",
+          "name": "Google Sheets account"
+        }
+      }
     }
   ],
   "connections": {
@@ -2985,7 +1726,7 @@
       "main": [
         [
           {
-            "node": "Read Lead File",
+            "node": "Read Leads Tab",
             "type": "main",
             "index": 0
           }
@@ -3004,28 +1745,6 @@
         [
           {
             "node": "Stop: Session Failure",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read Lead File": {
-      "main": [
-        [
-          {
-            "node": "Parse CSV",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse CSV": {
-      "main": [
-        [
-          {
-            "node": "Read Tracker Sheet",
             "type": "main",
             "index": 0
           }
@@ -3340,6 +2059,17 @@
         [
           {
             "node": "Upsert Failed Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Leads Tab": {
+      "main": [
+        [
+          {
+            "node": "Read Tracker Sheet",
             "type": "main",
             "index": 0
           }

@@ -18,7 +18,7 @@ For each lead in a spreadsheet, the pipeline: **researches** the company → **p
 a personalized cold email → saves it as a **Gmail draft**, and tracks everything in a **Google Sheet**.
 
 ```
-leads.csv  →  [ Research → Strategy → Email ]  →  Gmail draft  +  Google Sheet row
+Leads tab  →  [ Research → Strategy → Email ]  →  Gmail draft  +  Tracker tab row
 ```
 
 ---
@@ -142,10 +142,11 @@ A browser window opens — **log into ChatGPT**, set the mode to "high," and lea
 
 ## Step 8 — Add your leads
 
-- Look at **`leads.sample.csv`** to see the format.
-- Put your own leads in a file named **`leads.csv`** in the project root (same columns). Export one from
-  **Apify** or **Apollo**, or fill the sample in by hand. Blank cells are fine.
-- Restart the engine once so it can see the file: `docker compose up -d`.
+- Look at **`leads.sample.csv`** to see the columns.
+- Open your spreadsheet's **`Leads`** tab and paste your leads under the header row (same columns).
+  Export them from **Apify** or **Apollo**, or fill the sample in by hand. Blank cells are fine.
+- That's it — no file, no restart. The next run reads the tab directly. Re-scraped duplicates are
+  skipped automatically (by email and LinkedIn), so you can paste freely.
 
 ---
 
@@ -156,7 +157,7 @@ In n8n, open the workflow and click **Execute Workflow**. Watch the boxes light 
 
 ✅ **When it finishes, check three places:**
 1. **Gmail → Drafts** — one personalized draft per lead.
-2. Your **Google Sheet** — a row per lead with all their details and `status = Draft_Created`.
+2. Your **Google Sheet → `Tracker` tab** — a row per lead with all their details and `status = Draft_Created`.
 3. The **`docs/output/`** folder — the research and email saved as files.
 
 Review each draft, edit anything you like, and send the good ones. **You** decide what goes out.
@@ -165,7 +166,7 @@ Review each draft, edit anything you like, and send the good ones. **You** decid
 
 ## Make it yours (the 5-minute version)
 
-- **Different people to contact?** Replace `leads.csv`.
+- **Different people to contact?** Paste new rows into the `Leads` tab.
 - **Different offer or wording?** Edit the three files `system_prompt_01.md`, `system_prompt_02.md`,
   `system_prompt_03.md` in plain English (audience, offer, tone, call-to-action). Save — the next run
   uses them, no restart needed.

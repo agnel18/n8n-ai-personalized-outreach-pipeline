@@ -24,7 +24,7 @@ most reliable). All three use the same workflow and prompts — see the mode tab
 - **One AI backend**, either:
   - a logged-in **ChatGPT** or **Grok** browser session (free modes), **or**
   - an **xAI** ([console.x.ai](https://console.x.ai)) or **OpenAI** ([platform.openai.com](https://platform.openai.com)) API key (API mode)
-- A **lead list** as `leads.csv` (Apollo.io export, Apify scraper, or your own — see §5)
+- A **lead list** to paste into the spreadsheet's **`Leads`** tab (Apollo.io export, Apify scraper, or your own — see §5)
 
 ---
 
@@ -49,10 +49,11 @@ Open http://localhost:5678
 > docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
 > ```
 
-> **File access (n8n 2.x):** the Read File node can only read from `/home/node/.n8n-files`.
-> `docker-compose.yml` mounts your CSV there as `leads.csv`, and `Config.lead_csv_path` is
-> `/home/node/.n8n-files/leads.csv`. After pulling changes that touch the mounts, run
-> `docker compose up -d` once (not `docker restart`) so the new mounts take effect.
+> **File access (n8n 2.x):** the only host mount the workflow still needs is `./assets`
+> (email attachments), mapped read-only to `/home/node/.n8n-files/assets`. Leads no longer
+> come from a mounted file — they live in the spreadsheet's `Leads` tab. After pulling changes
+> that touch the mounts, run `docker compose up -d --force-recreate n8n` once (not
+> `docker restart`) so the removed CSV mount actually takes effect.
 
 ---
 
@@ -99,33 +100,34 @@ credential serves **both** Gmail nodes.
 
 ### Assign a credential to every node at once (no per-node clicking)
 
-The workflow has **7** Google Sheets nodes and **2** Gmail nodes, but only **two** credentials.
-You create each credential **once** — the work is binding it to every node. n8n binds a node to a
-credential **by its ID**, and all Sheets nodes share one placeholder ID (`REPLACE_WITH_GOOGLE_SHEETS_CRED_ID`),
-both Gmail nodes share another (`REPLACE_WITH_GMAIL_CRED_ID`). So bind them all in one shot:
+The workflow has **8** Google Sheets nodes and **2** Gmail nodes, but only **two** credentials.
+You create each credential **once** — including OAuth fields like **Client ID** and **Client Secret**
+for Gmail OAuth2. After that, nodes do not store those secrets; they only reference the credential
+**by its ID**. In this workflow, all Sheets nodes share one placeholder ID
+(`REPLACE_WITH_GOOGLE_SHEETS_CRED_ID`), and both Gmail nodes share another
+(`REPLACE_WITH_GMAIL_CRED_ID`). So bind them all in one shot:
 
 1. Create both credentials (above) and **Save** each.
 2. Open each saved credential and copy its **ID** from the browser URL (`…/credentials/`**`<ID>`**).
 3. In `workflow/lead_gen_xlsx_mode.json`, **find-replace** (once each):
    `REPLACE_WITH_GOOGLE_SHEETS_CRED_ID` → your Sheets credential ID, and
    `REPLACE_WITH_GMAIL_CRED_ID` → your Gmail credential ID.
-4. **Then import** the edited JSON. Every node is already bound — you never open a node.
+4. **Then import** the edited JSON. Every node is already bound — no per-node Client ID/Secret entry.
 
 > Prefer not to edit JSON? Import first, then pick the credential from the dropdown in each node.
 > It's the same result, just slower (9 nodes). The find-replace above is the shortcut.
 
 ---
 
-## 4. Create the tracker spreadsheet
+## 4. Create the spreadsheet (two tabs)
 
-Create a Google Sheet (any name, e.g. **`Lead Tracker`**). **Row 1 must contain the exact header
-names below (all lowercase).** The workflow keys on **`email`** and detects completion via
-**`status = Draft_Created`**; the rest are the audit trail.
+Create **one** Google Sheet (any name, e.g. **`Lead Tracker`**) with **two tabs**. One `sheet_id`,
+one credential — you just paste leads into one tab and read results from the other. **Header names
+are case-sensitive and must be lowercase**, exactly as listed.
 
-The header row is your **`leads.csv` columns** followed by the **pipeline columns**. The simplest
-reliable way: paste your `leads.csv` header row into A1, then append the pipeline columns after it.
-
-**Lead columns (from `leads.csv`):**
+**Tab `Leads`** — you own this one. Row 1 = the 25 lead columns. Paste your leads beneath and leave
+the rest to the workflow. The header is identical to [`leads.sample.csv`](leads.sample.csv), so the
+easiest path is to open that file and paste its header row into `Leads!A1`:
 ```
 fullName  firstName  lastName  email  all_emails  phone_numbers  position  linkedinUrl
 city  state  country  seniority  functional  organizationName  organizationWebsite
@@ -134,26 +136,34 @@ organizationDescription  organizationSpecialities  organizationCity  organizatio
 organizationCountry  source
 ```
 
-**Pipeline columns (append these):**
+**Tab `Tracker`** — the workflow owns this one; you rarely edit it. Row 1 = the same 25 lead columns
+**plus** the pipeline columns:
 ```
 operator_action  status  updated_at  run_id  grok_worker_url  lead  idempotency_key
-stage1  previous_output  stage2  stage3  id  message
+stage1  previous_output  stage2  stage3  id  message  attempts
 ```
 
+The workflow keys on **`email`**, treats a lead as done when its `status` is terminal
+(**`Draft_Created`**, or an operator-set `Skip` / `Do_Not_Contact` / `Unsubscribed`), and also
+dedupes on **`linkedinUrl`** so a re-scrape that returns the same person under a new email is not
+contacted twice. `Failed` leads retry until `attempts` reaches `max_attempts` (default 3).
+
 > If you see **"No columns found"**, the header row is missing or misspelled. Header names are
-> case-sensitive — they must be lowercase, matching the list above.
+> case-sensitive — they must be lowercase, matching the lists above.
 
 ---
 
-## 5. Prepare your lead list (`leads.csv`)
+## 5. Where to get leads
 
-Any CSV with the lead columns from §4 works — an **Apollo.io** export, an **Apify** scraper output,
-or your own list. The pipeline consumes `fullName`, `position`, `organizationName`, `email`, plus the
-rich `organization*` context fields. Put the file at the repo root as `leads.csv`; Docker Compose
-mounts it into n8n at `/home/node/.n8n-files/leads.csv`.
+Any source that gives you the §4 lead columns works — an **Apollo.io** export, an **Apify** scraper
+output (e.g. `leads-scraper`), or your own list. The pipeline consumes `fullName`, `position`,
+`organizationName`, `email`, plus the rich `organization*` context fields. Copy those columns and
+**paste them under the header in the `Leads` tab** — no file, no mount, no Apollo API call.
 
-> No Apollo API call is required — the list is read straight from the file. (Apollo is just one
-> place a CSV can come from; export from wherever you like.)
+> **Re-scraping is safe.** Scrapers like Apify duplicate people across runs and sometimes return a
+> different (guessed) email for the same person. Paste freely — dedup happens at selection time on
+> both `email` and `linkedinUrl`, so already-drafted people are skipped. To keep the tab tidy, run
+> **Data → Data cleanup → Remove duplicates** on `Leads` occasionally.
 
 ---
 
@@ -168,9 +178,11 @@ Import **`workflow/lead_gen_xlsx_mode.json`** (the one workflow). Then open the
 | `chatgpt_worker_url` | `http://host.docker.internal:8787` (default; edit only if you changed the port) |
 | `grok_worker_url` | `http://host.docker.internal:8788` |
 | `api_worker_url` | `http://host.docker.internal:8789` |
-| `sheet_id` | Your tracker spreadsheet ID — the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit`. Set it **once here**; all 7 Sheets nodes read it from Config. |
-| `lead_csv_path` | `/home/node/.n8n-files/leads.csv` |
+| `sheet_id` | Your spreadsheet ID — the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit`. Set it **once here**; all 8 Sheets nodes read it from Config. |
+| `leads_tab` | Tab holding your pasted leads (default **`Leads`**) |
+| `tracker_tab` | Tab the workflow writes results to (default **`Tracker`**) |
 | `batch_size` | How many fresh leads to attempt per run (start with **1–5**; see §9) |
+| `max_attempts` | Stop retrying a `Failed` lead after this many tries (default **3**) |
 | `email_signature` | Plain-text signature appended to each draft |
 | `sender_name` | Your name |
 | `attachment_dir` | `/home/node/.n8n-files/assets/attachments` (optional attachments) |
@@ -183,8 +195,9 @@ before importing. Otherwise, pick your Google Sheets + Gmail credentials from th
 > `ai_provider` picks which of the three `*_worker_url` fields the workflow calls. Each worker has
 > its own default port, so you only ever change `ai_provider` — the URLs stay as above.
 >
-> **Sheet ID:** you no longer edit it per node — all 7 Sheets nodes read `Config.sheet_id`. Set it
-> once above. (No find-replace needed for the sheet ID; that's only for the two credential IDs in §3.)
+> **Sheet ID:** you no longer edit it per node — all 8 Sheets nodes read `Config.sheet_id`, and the
+> tab names come from `Config.leads_tab` / `Config.tracker_tab`. Set them once above. (No find-replace
+> needed for the sheet ID; that's only for the two credential IDs in §3.)
 
 ---
 
@@ -273,8 +286,9 @@ If a site changes too often, switch to **API mode (§7b)** — it never breaks o
 ## 8. Batch behavior (how runs and resumes work)
 
 Each run processes up to **`batch_size`** leads, then stops. Selection is **status-based and
-resume-safe**: the workflow reads the tracker sheet, skips every lead already `Draft_Created`,
-dedupes by email, and takes the next N unprocessed leads. A **Loop Over Items** node then runs each
+resume-safe**: the workflow reads the `Leads` tab and the `Tracker` tab, skips every lead that is
+terminal (`Draft_Created` / `Skip` / `Do_Not_Contact` / `Unsubscribed`) or a duplicate (by `email`
+or `linkedinUrl`), retries `Failed` leads until `max_attempts`, and takes the next N. A **Loop Over Items** node then runs each
 lead through the full 3-stage pipeline **sequentially**.
 
 > **⚠️ Set `Loop Over Items` → Batch Size = `1`.** The workers drive a **single** shared session, so
@@ -282,14 +296,16 @@ lead through the full 3-stage pipeline **sequentially**.
 > replies → *"1 drafted, 0 failed (of 2 leads)"*). Batch size **1** = one lead fully finishes before
 > the next starts. (`Config.batch_size` is different — that's how many leads to *attempt* this run.)
 
-- **"Only a few leads processed?"** That's the throttle working. `leads.csv` can hold hundreds of
+- **"Only a few leads processed?"** That's the throttle working. The `Leads` tab can hold hundreds of
   leads; `Config.batch_size` caps how many run per execution, and already-drafted leads are skipped.
   Re-run to advance, or raise `batch_size` — but budget time (each lead is 3 stages).
 - **Resume** is automatic — run again and it continues with the next unprocessed leads; no duplicates.
 - **Pause** — click **Stop** in n8n (everything already drafted is saved), or set `Config.paused = true`.
 - **Fresh context per lead** — the worker starts a new chat (`/new-chat`) so one company's research
   doesn't bleed into the next (no-op in API mode, which is stateless).
-- **Resilience** — a failed lead is logged `Failed` and the batch continues; failed leads retry next run.
+- **Resilience** — a failed lead is logged `Failed` (with its lead details preserved) and the batch
+  continues; `Failed` leads retry on later runs until `attempts` reaches `max_attempts`, then they're
+  left alone so a permanently-bad lead can't hog a batch slot. Clear a row's `status` to retry it manually.
 - **Honest summary** — an end-of-batch check fails the run **red** with "N drafted, M failed" if any
   draft is missing, so you never get a false green.
 - **Attachments (optional)** — drop files into `assets/attachments/`; each is attached to every draft.
@@ -323,7 +339,7 @@ Once that's clean, raise `batch_size` and run again to advance through the list.
 ## 10. Customization & production
 
 - **Adapt it to your offer, audience, and voice** — see **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)**
-  (edit the Config node, the three prompt files, and `leads.csv`).
+  (edit the Config node, the three prompt files, and the `Leads` tab).
 - **Where this pipeline fits** — see **[docs/USE_CASES.md](docs/USE_CASES.md)**.
 - **Production tips** — add a Schedule Trigger for daily runs, add an error workflow + notification,
   monitor your API usage, and keep the Google Sheet as the source of truth for status.
@@ -336,6 +352,7 @@ Once that's clean, raise `batch_size` and run again to advance through the list.
 |-------|-----|
 | n8n "No columns found" on a Sheets node | Header row missing/misspelled — must match the lowercase names in §4 |
 | Google Sheets 404 | Wrong `sheet_id` in Config. (403 instead = share the sheet with the Service Account) |
+| "Leads tab returned 0 rows" | The `Leads` tab is empty, or `Config.leads_tab` doesn't match the actual tab name (case-sensitive), or the credential can't read the sheet. Paste leads / fix the tab name. |
 | API mode not working | Confirm `API_BASE_URL` + `MODEL` match your provider and `API_KEY` is set (`curl /health`) |
 | API error mentioning `web_search` | Using search on a non-search OpenAI model — set `ENABLE_WEB_SEARCH=false` or use a `*-search-preview` model |
 | Browser worker hangs / empty replies | The site's DOM changed — run `inspect_dom.js` and update selectors (§7c) |

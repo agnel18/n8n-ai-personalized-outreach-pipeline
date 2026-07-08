@@ -1,10 +1,10 @@
 # 🤖 AI Lead Generation Pipeline
 
-> Automated B2B outreach pipeline built with **n8n**, an **AI writer of your choice** (ChatGPT / xAI Grok — browser or API), a **CSV/XLSX lead list**, **Gmail** and **Google Sheets**
+> Automated B2B outreach pipeline built with **n8n**, an **AI writer of your choice** (ChatGPT / xAI Grok — browser or API), a **Google Sheets lead list**, and **Gmail**
 
 ![n8n](https://img.shields.io/badge/n8n-Automation-orange)
 ![AI](https://img.shields.io/badge/AI-ChatGPT%20%7C%20Grok%20%7C%20OpenAI-black)
-![Leads](https://img.shields.io/badge/Leads-CSV%20%2F%20XLSX-purple)
+![Leads](https://img.shields.io/badge/Leads-Google%20Sheets-purple)
 ![Gmail](https://img.shields.io/badge/Gmail-Drafts-red)
 ![Google Sheets](https://img.shields.io/badge/Google%20Sheets-Tracker-green)
 
@@ -54,7 +54,7 @@ never breaks on UI changes.
 
 - **Automation:** n8n (Docker, `localhost:5678`)
 - **AI writer:** ChatGPT or **xAI Grok 4.3** — browser session *or* OpenAI-compatible API (`api.x.ai/v1` or `api.openai.com/v1`)
-- **Lead source:** Apollo.io export or any scraped **CSV** (e.g. Apify `leads-scraper`)
+- **Lead source:** paste an Apollo.io export or any scraped list (e.g. Apify `leads-scraper`) into the spreadsheet's **`Leads`** tab
 - **Email:** Gmail (OAuth2) — **draft-only** by design
 - **Tracker:** Google Sheets (status per lead, idempotent)
 - **Workers:** local Node/Express (`automation/`), no build step
@@ -99,7 +99,7 @@ ai-lead-generation-pipeline-agnel/
 
 ---
 
-## 🚀 Quick Start (CSV batch mode)
+## 🚀 Quick Start (sheet batch mode)
 
 ### 1. Start n8n
 ```bash
@@ -117,9 +117,9 @@ npm run start:api       # API — fill automation/.env first (see .env.example)
 
 ### 3. Import the workflow & set credentials
 Import `workflow/lead_gen_xlsx_mode.json`, connect Gmail + Google Sheets, set
-`Config.ai_provider` to the worker you started (`chatgpt` | `grok` | `api`), put your tracker
-spreadsheet ID in **`Config.sheet_id`** (set once — all 7 Sheets nodes read it from Config), and
-drop your leads into `leads.csv`. To bind both credentials to every node without opening each one,
+`Config.ai_provider` to the worker you started (`chatgpt` | `grok` | `api`), put your
+spreadsheet ID in **`Config.sheet_id`** (set once — all 8 Sheets nodes read it from Config), and
+paste your leads into the spreadsheet's **`Leads`** tab. To bind both credentials to every node without opening each one,
 see [SETUP → *Assign a credential to every node at once*](SETUP.md#assign-a-credential-to-every-node-at-once).
 Full steps — including API keys and Google OAuth — are in **[SETUP.md](SETUP.md)**.
 
@@ -150,7 +150,7 @@ Details in the docs above and `SETUP.md`.
 | Doc | What's in it |
 |-----|--------------|
 | **[SETUP.md](SETUP.md)** | Full setup: all three modes, Google auth, batch behavior, first test run, troubleshooting |
-| **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)** | Adapt it to your offer, audience, and voice — Config node, the 3 prompts, `leads.csv` |
+| **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)** | Adapt it to your offer, audience, and voice — Config node, the 3 prompts, the `Leads` tab |
 | **[docs/USE_CASES.md](docs/USE_CASES.md)** | Where this pipeline applies — MECE scenarios (sales, recruiting, partnerships, and more) |
 | **[docs/MAINTAINING_SELECTORS.md](docs/MAINTAINING_SELECTORS.md)** | Fix browser selectors when a site's HTML changes |
 

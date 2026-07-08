@@ -47,7 +47,7 @@ services:
       - NODE_ENV=production
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./leads.csv:/home/node/.n8n-files/leads.csv    # ← Added for XLSX mode
+      # Leads now live in the "Leads" tab of the tracker spreadsheet — no CSV mount.
       - ./assets:/home/node/.n8n-files/assets:ro       # ← Static email attachments (read-only)
     networks:
       - n8n_network
