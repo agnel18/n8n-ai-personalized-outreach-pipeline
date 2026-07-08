@@ -92,11 +92,42 @@ expiry — configure it once and the Sheets nodes just work.
 
 Personal Gmail can't use a Service Account (that needs Workspace domain-wide delegation), so the
 **Create Gmail Draft** node uses **Gmail OAuth2**. It's a single one-time auth and it only ever
-creates drafts — it never sends. Create the OAuth 2.0 Client ID (**Web application**) in Google
-Cloud Console, then paste n8n's **OAuth Redirect URL** — `http://localhost:5678/rest/oauth2-credential/callback`
-— into the client's *Authorized redirect URIs*. Add the Client ID + Secret to a **Gmail OAuth2**
-credential in n8n and click **Connect**. ("Allowed HTTP Request Domains" can stay blank.) This one
-credential serves **both** Gmail nodes.
+creates drafts — it never sends.
+
+#### Step-by-step: create the OAuth client in Google Cloud Console
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and select your project.
+2. **APIs & Services → Credentials → + Create Credentials → OAuth client ID**.
+3. **Application type** — select **Web application** (not Desktop, not iOS/Android).
+4. Give it any name (e.g. `n8n Gmail`).
+5. Under **Authorized redirect URIs** click **+ Add URI** and paste exactly:
+   ```
+   http://localhost:5678/rest/oauth2-credential/callback
+   ```
+6. Click **Create**. A popup shows your **Client ID** and **Client Secret** — copy both.
+
+> **OAuth consent screen (if prompted):** choose **External**, fill in App name + your email, and
+> under *Test users* add the Gmail address you'll be drafting from. While the app is in
+> **Testing** mode only listed test users can authorise — skip this and you'll get a 403 or
+> "Access blocked" screen during the n8n Connect step.
+
+#### Step-by-step: add the credential in n8n
+
+1. In n8n left sidebar → **Overview → Credentials → Add credential → Gmail OAuth2**.
+2. Paste the **Client ID** and **Client Secret** you copied above.
+3. Click **Connect** — a Google consent screen opens in a new tab.
+4. Select your Gmail account, grant access, and close the tab.
+5. **Save** the credential. This one credential serves **both** Gmail nodes.
+
+#### Troubleshooting Gmail OAuth2 errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| **401 invalid_client** | Wrong application type or miscopied credentials | Re-check: application type must be **Web application**; re-copy Client ID + Secret with no trailing spaces |
+| **401 invalid_client** | Redirect URI not registered | In Google Cloud Console open the OAuth client → *Authorized redirect URIs* → confirm `http://localhost:5678/rest/oauth2-credential/callback` is listed exactly (no trailing slash) |
+| **403 / "Access blocked"** | Gmail account not added as a test user | APIs & Services → OAuth consent screen → *Test users* → add your Gmail address |
+| **redirect_uri_mismatch** | URI in Google doesn't match what n8n sent | Delete the URI and re-add it by copy-pasting from step 5 above — no extra characters |
+| **Consent screen loops / hangs** | Pop-up blocked by browser | Allow pop-ups for `localhost:5678` and retry **Connect** |
 
 ### Assign a credential to every node at once (no per-node clicking)
 
@@ -357,6 +388,7 @@ Once that's clean, raise `batch_size` and run again to advance through the list.
 | API error mentioning `web_search` | Using search on a non-search OpenAI model — set `ENABLE_WEB_SEARCH=false` or use a `*-search-preview` model |
 | Browser worker hangs / empty replies | The site's DOM changed — run `inspect_dom.js` and update selectors (§7c) |
 | "1 drafted, 0 failed (of 2 leads)" | Set `Loop Over Items` → Batch Size = **1** (workers are single-session) |
+| Gmail OAuth2 **401 invalid_client** | Wrong app type or missing redirect URI — see *Troubleshooting Gmail OAuth2 errors* in §3 |
 | No Gmail draft created | Check the Gmail OAuth2 credential + scopes; drafts only, never sent |
 | Only a few leads processed | Batch throttle — raise `Config.batch_size` or re-run (§8) |
 | Credentials keep breaking on restart | Set a permanent `N8N_ENCRYPTION_KEY` and use `docker compose up -d` (§2) |
