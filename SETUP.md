@@ -9,7 +9,7 @@ most reliable). All three use the same workflow and prompts — see the mode tab
 
 > **Pick a mode first:**
 > - **Browser – ChatGPT** (`npm run start:chatgpt`) — verified, free, needs a logged-in ChatGPT session.
-> - **Browser – Grok** (`npm start`) — free, needs a logged-in Grok session.
+> - **Browser – Grok** (`npm run start:grok`) — free, needs a logged-in Grok session.
 > - **API** (`npm run start:api`) — paid, robust; needs an xAI or OpenAI key. See **§7 – API worker**.
 >
 > Browser modes need **no** API key. Only API mode needs one.
