@@ -1,71 +1,55 @@
-// API worker — a drop-in alternative to the browser workers (chatgpt_worker.js /
-// grok_worker.js) for people who have an LLM API key. It exposes the SAME HTTP API
-// and response shapes (/health, /session-check, /new-chat, /run-stage), so the n8n
-// workflow works unchanged — select provider "api" in the workflow Config (this
-// worker's default port is 8789) and run `npm run start:api`.
-//
-// Unlike the browser workers, this one drives NO browser: each pipeline stage is a
-// single OpenAI-compatible chat-completions call. Because every stage is stateless
-// (the previous stage's text arrives in context.previous_output), three independent
-// calls reproduce the pipeline exactly.
-//
-// Provider is configurable via env (defaults to xAI Grok):
-//   API_BASE_URL   default https://api.x.ai/v1   (OpenAI-compatible base)
-//   API_KEY        required
-//   MODEL          default grok-4.3
-//   API_PROVIDER   xai | openai | generic        (controls how web search is wired)
-//   ENABLE_WEB_SEARCH  true|false                (only the research stage searches)
-// See .env.example for the full list.
+'use strict';
+
+// OpenAI API worker for the n8n lead-generation pipeline.
+// It preserves the same HTTP contract as the browser workers:
+//   GET  /health
+//   POST /session-check
+//   POST /new-chat
+//   POST /run-stage
+
 const fs = require('fs');
 const path = require('path');
 
-// ── Auto-load .env ────────────────────────────────────────────────────────────
-// Node doesn't read .env files on its own, so we do it here. This means you can
-// just run `npm run start:api` (or `node api_worker.js`) and the values from your
-// .env file are picked up automatically — no flags to remember, nothing extra to
-// install.
-//
-// We look for a .env next to this file first, then in the folder you ran the
-// command from. Anything already set in your shell (or passed inline) always
-// wins, so this never overrides an explicit setting.
 function loadDotEnv() {
   const candidates = [
     path.join(__dirname, '.env'),
     path.join(process.cwd(), '.env'),
   ];
-  const envPath = candidates.find((p) => {
+
+  const envPath = candidates.find((candidate) => {
     try {
-      return fs.statSync(p).isFile();
+      return fs.statSync(candidate).isFile();
     } catch {
       return false;
     }
   });
 
   if (!envPath) {
-    console.log('No .env file found — using existing environment variables as-is.');
-    console.log(`  (Looked in: ${candidates.join('  and  ')})`);
+    console.log('No .env file found; using existing environment variables.');
     return;
   }
 
   let raw;
   try {
     raw = fs.readFileSync(envPath, 'utf8');
-  } catch (err) {
-    console.log(`Found .env at ${envPath} but could not read it: ${err.message}`);
+  } catch (error) {
+    console.log(`Could not read ${envPath}: ${error.message}`);
     return;
   }
 
   let loaded = 0;
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue; // blank line or comment
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
     const withoutExport = trimmed.replace(/^export\s+/, '');
-    const eq = withoutExport.indexOf('=');
-    if (eq === -1) continue; // not a KEY=VALUE line
-    const key = withoutExport.slice(0, eq).trim();
+    const separatorIndex = withoutExport.indexOf('=');
+    if (separatorIndex === -1) continue;
+
+    const key = withoutExport.slice(0, separatorIndex).trim();
     if (!key) continue;
-    let value = withoutExport.slice(eq + 1).trim();
-    // Strip one layer of matching surrounding quotes, if present.
+
+    let value = withoutExport.slice(separatorIndex + 1).trim();
     if (
       value.length >= 2 &&
       ((value.startsWith('"') && value.endsWith('"')) ||
@@ -73,17 +57,17 @@ function loadDotEnv() {
     ) {
       value = value.slice(1, -1);
     }
-    // Never overwrite something already set in the real environment.
+
     if (!(key in process.env)) {
       process.env[key] = value;
-      loaded++;
+      loaded += 1;
     }
   }
+
   console.log(`Loaded ${loaded} setting(s) from ${envPath}`);
 }
 
 loadDotEnv();
-// ──────────────────────────────────────────────────────────────────────────────
 
 const express = require('express');
 const {
@@ -92,141 +76,132 @@ const {
   saveMarkdown,
   stageMeta,
 } = require('./worker_shared');
+const {
+  resolveProviderConfig,
+  loadProviderAdapter,
+} = require('./provider_registry');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-const PORT = process.env.WORKER_PORT || process.env.API_WORKER_PORT || 8789;
-const API_BASE_URL = (process.env.API_BASE_URL || 'https://api.x.ai/v1').replace(/\/+$/, '');
-const API_KEY = process.env.API_KEY || '';
-const MODEL = process.env.MODEL || 'grok-4.3';
-const API_PROVIDER = (process.env.API_PROVIDER || 'xai').toLowerCase();
-const ENABLE_WEB_SEARCH =
-  process.env.ENABLE_WEB_SEARCH === undefined
-    ? true
-    : /^(1|true|yes|on)$/i.test(String(process.env.ENABLE_WEB_SEARCH));
-// Per-request ceiling; high-mode research + web search can be slow.
-const REQUEST_TIMEOUT_MS = Number(process.env.API_TIMEOUT_MS || 180000);
+const PORT = Number(process.env.WORKER_PORT || process.env.API_WORKER_PORT || 8789);
+const HOST = process.env.WORKER_HOST || '0.0.0.0';
+const ENABLE_WEB_SEARCH = process.env.ENABLE_WEB_SEARCH === undefined
+  ? true
+  : /^(1|true|yes|on)$/i.test(String(process.env.ENABLE_WEB_SEARCH));
+const REQUEST_TIMEOUT_MS = Number(process.env.API_TIMEOUT_MS || 165000);
+const VALIDATION_TIMEOUT_MS = Number(process.env.API_VALIDATION_TIMEOUT_MS || 15000);
 
-// Add provider-appropriate web-search parameters to a chat-completions body.
-// xAI: top-level `search_parameters` (Live Search). OpenAI: `web_search_options`
-// only works on search-preview models, so it's best-effort — if the model isn't
-// search-capable the API ignores it (or errors, which we surface). Only the
-// research stage searches; review/final_email work off previous_output.
-function applyWebSearch(body, stage) {
-  if (!ENABLE_WEB_SEARCH || stage !== 'research') return body;
-  if (API_PROVIDER === 'xai') {
-    body.search_parameters = { mode: 'auto', return_citations: true };
-  } else if (API_PROVIDER === 'openai') {
-    body.web_search_options = {};
-  }
-  // 'generic' providers: leave as-is (no standard search param).
-  return body;
+let providerConfig = null;
+let providerAdapter = null;
+let startupError = '';
+
+try {
+  providerConfig = resolveProviderConfig(process.env);
+  providerAdapter = loadProviderAdapter(providerConfig);
+} catch (error) {
+  startupError = error.message;
 }
 
-// One chat-completions call with a timeout and a single retry/backoff on 429/5xx.
-async function callChatCompletion(prompt, stage) {
-  if (!API_KEY) {
-    return { ok: false, reason: 'API_KEY is not set. Add it to automation/.env.' };
-  }
-
-  const body = applyWebSearch(
-    {
-      model: MODEL,
-      messages: [{ role: 'user', content: prompt }],
-    },
-    stage,
-  );
-
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    let res;
-    try {
-      res = await fetch(`${API_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } catch (err) {
-      clearTimeout(timer);
-      if (err.name === 'AbortError') {
-        return { ok: false, reason: `API request timed out after ${REQUEST_TIMEOUT_MS} ms.` };
-      }
-      // Network error — retry once.
-      if (attempt === 0) continue;
-      return { ok: false, reason: `API request failed: ${err.message}` };
-    }
-    clearTimeout(timer);
-
-    if (res.status === 429 || res.status >= 500) {
-      if (attempt === 0) continue; // retry once with backoff
-      const errText = await res.text().catch(() => '');
-      return { ok: false, reason: `API error ${res.status}: ${errText.slice(0, 300)}` };
-    }
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      return { ok: false, reason: `API error ${res.status}: ${errText.slice(0, 300)}` };
-    }
-
-    let data;
-    try {
-      data = await res.json();
-    } catch (err) {
-      return { ok: false, reason: `Could not parse API response JSON: ${err.message}` };
-    }
-    const text = data?.choices?.[0]?.message?.content;
-    if (!text || !String(text).trim()) {
-      return { ok: false, reason: 'API returned an empty completion.' };
-    }
-    return { ok: true, responseText: String(text).trim() };
-  }
-  return { ok: false, reason: 'API request failed after retry.' };
-}
-
-app.get('/health', (_req, res) => {
-  res.json({
-    ok: true,
-    service: 'api-worker',
-    ready: Boolean(API_KEY),
-    reason: API_KEY ? 'API key present.' : 'API_KEY not set — add it to automation/.env.',
-    apiBaseUrl: API_BASE_URL,
-    model: MODEL,
-    provider: API_PROVIDER,
+function configurationSummary() {
+  return {
+    provider: providerConfig?.provider || 'openai',
+    apiBaseUrl: providerConfig?.baseUrl || '',
+    model: providerConfig?.model || '',
     webSearch: ENABLE_WEB_SEARCH,
+    keySource: providerConfig?.keySource || '',
+    modelSource: providerConfig?.modelSource || '',
+  };
+}
+
+async function checkReadiness(force = false) {
+  if (startupError) {
+    return {
+      ready: false,
+      reason: startupError,
+      ...configurationSummary(),
+    };
+  }
+
+  if (!providerConfig?.ready || !providerAdapter) {
+    return {
+      ready: false,
+      reason: 'OPENAI_API_KEY is not set.',
+      ...configurationSummary(),
+    };
+  }
+
+  const validation = await providerAdapter.validateConfiguration({
+    timeoutMs: VALIDATION_TIMEOUT_MS,
+    force,
   });
+
+  return {
+    ...configurationSummary(),
+    ...validation,
+  };
+}
+
+app.get('/health', async (_req, res) => {
+  try {
+    const readiness = await checkReadiness(false);
+    res.json({
+      ok: true,
+      service: 'api-worker',
+      ...readiness,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      service: 'api-worker',
+      ready: false,
+      reason: error.message,
+      ...configurationSummary(),
+    });
+  }
 });
 
-app.post('/session-check', (req, res) => {
+app.post('/session-check', async (req, res) => {
   const contextData = req.body?.context || {};
-  const ready = Boolean(API_KEY);
-  res.json({
-    ok: true,
-    ready,
-    reason: ready ? 'API key present.' : 'API_KEY not set.',
-    context: {
-      ...contextData,
-      operator_action: ready
-        ? 'Session ready. Proceeding.'
-        : 'Set API_KEY in automation/.env, then rerun.',
-    },
-  });
+
+  try {
+    const readiness = await checkReadiness(false);
+    res.json({
+      ok: true,
+      ready: readiness.ready,
+      reason: readiness.reason,
+      provider: readiness.provider,
+      model: readiness.model,
+      context: {
+        ...contextData,
+        operator_action: readiness.ready
+          ? `OpenAI API ready with model ${readiness.model}.`
+          : `OpenAI API is not ready: ${readiness.reason}`,
+      },
+    });
+  } catch (error) {
+    res.json({
+      ok: true,
+      ready: false,
+      reason: error.message,
+      context: {
+        ...contextData,
+        operator_action: `OpenAI API is not ready: ${error.message}`,
+      },
+    });
+  }
 });
 
-// Stateless in API mode — there is no chat to reset. Kept so the workflow's
-// (optional) new-chat step is a harmless success.
+// API mode is stateless, so a new chat is unnecessary.
 app.post('/new-chat', (req, res) => {
   const contextData = req.body?.context || {};
   res.json({
     ok: true,
-    reason: 'API mode is stateless; no chat reset needed.',
-    context: { ...contextData, operator_action: 'API mode: no chat reset needed.' },
+    reason: 'API mode is stateless; no chat reset is required.',
+    context: {
+      ...contextData,
+      operator_action: 'OpenAI API mode: no chat reset required.',
+    },
   });
 });
 
@@ -236,45 +211,72 @@ app.post('/run-stage', async (req, res) => {
     const contextData = req.body?.context || {};
     const lead = contextData.lead || req.body?.lead || {};
     const previousOutput = contextData.previous_output || req.body?.previousOutput || '';
-
     const meta = stageMeta(stage);
+
     if (!meta) {
       return res.status(400).json({
         ok: false,
         stage,
         reason: `Unknown stage: ${stage}`,
-        context: { ...contextData, status: 'Failed', operator_action: `Unknown stage: ${stage}` },
-      });
-    }
-
-    if (!API_KEY) {
-      return res.status(409).json({
-        ok: false,
-        stage,
-        reason: 'API_KEY is not set.',
         context: {
           ...contextData,
           status: 'Failed',
-          operator_action: 'Set API_KEY in automation/.env, then rerun.',
+          operator_action: `Unknown stage: ${stage}`,
+        },
+      });
+    }
+
+    const readiness = await checkReadiness(false);
+    if (!readiness.ready) {
+      return res.status(200).json({
+        ok: false,
+        retryable: false,
+        stage,
+        reason: readiness.reason,
+        context: {
+          ...contextData,
+          status: 'Failed',
+          operator_action: readiness.reason,
         },
       });
     }
 
     const template = await loadPromptTemplate(stage);
     const prompt = buildPrompt(template, lead, previousOutput);
+    const useWebSearch = ENABLE_WEB_SEARCH && stage === 'research';
 
-    console.log(`[api] ${stage}: calling ${MODEL} @ ${API_BASE_URL}` +
-      (ENABLE_WEB_SEARCH && stage === 'research' ? ' (web search on)' : ''));
-    const result = await callChatCompletion(prompt, stage);
+    console.log(
+      `[api] ${stage}: calling ${providerConfig.model} @ ${providerConfig.baseUrl}` +
+      (useWebSearch ? ' (web search on)' : ''),
+    );
+
+    const result = await providerAdapter.generate({
+      stage,
+      prompt,
+      enableWebSearch: useWebSearch,
+      timeoutMs: REQUEST_TIMEOUT_MS,
+    });
+
     if (!result.ok) {
       console.log(`[api] ${stage}: FAILED — ${result.reason}`);
-      return res.status(409).json({
+      const responseStatus = result.retryable ? 503 : 200;
+
+      return res.status(responseStatus).json({
         ok: false,
         stage,
         reason: result.reason,
-        context: { ...contextData, status: 'Failed', operator_action: result.reason },
+        code: result.code || '',
+        retryable: Boolean(result.retryable),
+        context: {
+          ...contextData,
+          status: 'Failed',
+          operator_action: result.reason,
+          api_provider: result.provider || providerConfig.provider,
+          api_model: result.model || providerConfig.model,
+        },
       });
     }
+
     console.log(`[api] ${stage}: ok — ${result.responseText.length} chars`);
 
     const mdPath = await saveMarkdown({
@@ -283,7 +285,7 @@ app.post('/run-stage', async (req, res) => {
       responseText: result.responseText,
     });
 
-    res.json({
+    return res.json({
       ok: true,
       stage,
       reason: 'Stage completed successfully.',
@@ -293,24 +295,38 @@ app.post('/run-stage', async (req, res) => {
         updated_at: new Date().toISOString(),
         previous_output: result.responseText,
         operator_action: 'Stage complete.',
+        api_provider: result.provider,
+        api_model: result.model,
+        api_usage: result.usage,
         [meta.key]: {
           responseText: result.responseText,
           mdPath,
+          provider: result.provider,
+          model: result.model,
+          citations: result.citations,
+          usage: result.usage,
         },
       },
     });
-  } catch (err) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
       ok: false,
-      reason: err.message,
-      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+      reason: error.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
     });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`api-worker listening on http://localhost:${PORT}`);
-  console.log(`provider: ${API_PROVIDER} | base: ${API_BASE_URL} | model: ${MODEL}`);
+app.listen(PORT, HOST, () => {
+  console.log(`api-worker listening on http://${HOST}:${PORT}`);
+  console.log(
+    `provider: ${providerConfig?.provider || 'openai'} | ` +
+    `base: ${providerConfig?.baseUrl || '(not configured)'} | ` +
+    `model: ${providerConfig?.model || '(not configured)'}`,
+  );
   console.log(`web search: ${ENABLE_WEB_SEARCH ? 'on (research stage)' : 'off'}`);
-  if (!API_KEY) console.log('WARNING: API_KEY is not set — set it in automation/.env before running the workflow.');
+  if (startupError) console.log(`CONFIGURATION ERROR: ${startupError}`);
+  if (!providerConfig?.apiKey) {
+    console.log('WARNING: OPENAI_API_KEY is not set in automation/.env.');
+  }
 });
