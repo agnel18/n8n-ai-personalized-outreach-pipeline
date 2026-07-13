@@ -1,0 +1,3948 @@
+{
+  "name": "Lead Gen Pipeline - Production Hardened - Gmail Verification Fixed",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9cedcc8e-2409-45d2-80d3-99809be2a03e",
+      "name": "Start Pipeline"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c0nf1g00-0000-4000-8000-00000000000a",
+              "name": "leads_tab",
+              "value": "Leads",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-00000000000b",
+              "name": "tracker_tab",
+              "value": "Tracker",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-00000000000c",
+              "name": "max_attempts",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000003a",
+              "name": "ai_provider",
+              "value": "chatgpt",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000003b",
+              "name": "chatgpt_worker_url",
+              "value": "http://host.docker.internal:8787",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000003",
+              "name": "grok_worker_url",
+              "value": "http://host.docker.internal:8788",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000003c",
+              "name": "api_worker_url",
+              "value": "http://host.docker.internal:8789",
+              "type": "string"
+            },
+            {
+              "id": "c0nf1g00-0000-4000-8000-000000000004",
+              "name": "sheet_id",
+              "value": "PASTE_YOUR_GOOGLE_SHEET_ID_HERE",
+              "type": "string"
+            },
+            {
+              "id": "c0nf-0000-4000-8000-000000000001",
+              "name": "batch_size",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "c0nf-0000-4000-8000-000000000002",
+              "name": "attachment_dir",
+              "value": "/home/node/.n8n-files/assets/attachments",
+              "type": "string"
+            },
+            {
+              "id": "c0nf-0000-4000-8000-000000000003",
+              "name": "email_signature",
+              "value": "Best,\n[Your Name]\n[Your Title]\nyou@example.com",
+              "type": "string"
+            },
+            {
+              "id": "c0nf-0000-4000-8000-000000000004",
+              "name": "sender_name",
+              "value": "[Your Name]",
+              "type": "string"
+            },
+            {
+              "id": "c0nf-0000-4000-8000-000000000005",
+              "name": "paused",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "9bf689f3-debc-428e-8b8c-a333e569996c",
+              "name": "processing_stale_minutes",
+              "value": 60,
+              "type": "number"
+            },
+            {
+              "id": "a49c8dbb-1a99-4700-ab69-925d347cbc10",
+              "name": "batch_summary_wait_seconds",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "4b6599fc-2a48-4778-8469-87f3d7159a09",
+              "name": "min_email_body_chars",
+              "value": 80,
+              "type": "number"
+            },
+            {
+              "id": "fe814cd3-7edc-4da6-9aeb-40976b2a6800",
+              "name": "max_attachment_files",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "dd5d7631-5700-4561-8b6d-42769d3ede57",
+              "name": "max_attachment_total_bytes",
+              "value": 20000000,
+              "type": "number"
+            },
+            {
+              "id": "d2c3463f-9960-415e-bcc9-a5d9ab76356c",
+              "name": "allowed_attachment_extensions",
+              "value": "pdf,doc,docx,ppt,pptx,xls,xlsx,csv,txt,png,jpg,jpeg",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "id": "39ab44d2-79b9-4f0f-870c-ee81d8fb89eb",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/session-check' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { context: $json } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        0
+      ],
+      "id": "8c0d00a1-eb8d-4b0d-b415-b1dae6fd7b33",
+      "name": "Session Check",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json || {};\nconst ready = payload.ready === true || payload.context?.ready === true;\nconst reason = String(\n  payload.reason ||\n  payload.context?.reason ||\n  payload.error?.message ||\n  payload.message ||\n  (ready ? 'Session ready.' : 'Worker session is not ready.')\n).trim();\n\nreturn [{\n  json: {\n    ready,\n    reason,\n    context: payload.context && typeof payload.context === 'object'\n      ? payload.context\n      : $('Config').first().json,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        0
+      ],
+      "id": "ed71a9b9-776e-4e3c-986f-c29592f6925d",
+      "name": "Normalize Session Result",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72f8fd81-ed5c-4e13-b2a6-f306c224f5cf",
+              "leftValue": "={{ $json.ready }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1160,
+        0
+      ],
+      "id": "15b6b17c-e6a6-4ff4-b8bc-0f52296da3b8",
+      "name": "Session Ready?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const err = $json?.error;\nconst message = String(\n  $json?.reason ||\n  (typeof err === 'string' ? err : err?.message) ||\n  $json?.message ||\n  'Session check failed.'\n).trim();\n\nreturn [{\n  json: {\n    status: 'Failed',\n    failed_stage: 'session_check',\n    error_message: message,\n    operator_action: `Session check failed: ${message}`,\n    updated_at: new Date().toISOString(),\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        160
+      ],
+      "id": "dde750de-e6ea-4e51-95e8-c6e7cdd1ab2f",
+      "name": "Set Session Failure"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.operator_action }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        160
+      ],
+      "id": "8173017e-4e5c-40a0-b49d-2917f45a4e6a",
+      "name": "Stop: Session Failure"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/run-stage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { stage: 'research', context: $json } }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4300,
+        240
+      ],
+      "id": "fc14141d-6462-4e3d-8ef0-8795ff07f782",
+      "name": "Run Stage 1 Research",
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json || {};\nconst err = payload.error;\nif (err) {\n  throw new Error(typeof err === 'string' ? err : (err.message || JSON.stringify(err)));\n}\nconst context = payload.context && typeof payload.context === 'object'\n  ? payload.context\n  : null;\nif (!context) throw new Error('Stage 1 response did not contain a context object.');\nif (!context.lead?.email) throw new Error('Stage 1 context lost lead.email.');\n\nconst status = String(context.status || '').trim().toLowerCase();\nif (status === 'failed' || status === 'error') {\n  throw new Error(String(context.operator_action || context.reason || 'Stage 1 returned failed status.'));\n}\n\nconst stage = context.stage1;\nif (!stage || typeof stage !== 'object') {\n  throw new Error('Stage 1 response did not contain context.stage1.');\n}\nconst hasOutput = [stage.responseText, stage.mdPath, stage.path, stage.filePath, stage.output]\n  .some(v => String(v ?? '').trim() !== '');\nif (!hasOutput) throw new Error('Stage 1 completed without a usable output or artifact path.');\n\nreturn [{ json: {\n  ...context,\n  status: 'Processing',\n  stage1_status: 'completed',\n  updated_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4540,
+        240
+      ],
+      "id": "4e6f4846-3fa9-405c-826b-b59b2abfc561",
+      "name": "Adopt Stage 1 Context",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/run-stage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { stage: 'review', context: $json } }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4780,
+        240
+      ],
+      "id": "09bd43bd-480b-4a52-a9d6-81723a75397d",
+      "name": "Run Stage 2 Review",
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json || {};\nconst err = payload.error;\nif (err) {\n  throw new Error(typeof err === 'string' ? err : (err.message || JSON.stringify(err)));\n}\nconst context = payload.context && typeof payload.context === 'object'\n  ? payload.context\n  : null;\nif (!context) throw new Error('Stage 2 response did not contain a context object.');\nif (!context.lead?.email) throw new Error('Stage 2 context lost lead.email.');\n\nconst status = String(context.status || '').trim().toLowerCase();\nif (status === 'failed' || status === 'error') {\n  throw new Error(String(context.operator_action || context.reason || 'Stage 2 returned failed status.'));\n}\n\nconst stage = context.stage2;\nif (!stage || typeof stage !== 'object') {\n  throw new Error('Stage 2 response did not contain context.stage2.');\n}\nconst hasOutput = [stage.responseText, stage.mdPath, stage.path, stage.filePath, stage.output]\n  .some(v => String(v ?? '').trim() !== '');\nif (!hasOutput) throw new Error('Stage 2 completed without a usable output or artifact path.');\n\nreturn [{ json: {\n  ...context,\n  status: 'Processing',\n  stage2_status: 'completed',\n  updated_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5020,
+        240
+      ],
+      "id": "d514ba02-645d-43b0-89d5-e17eb87c5455",
+      "name": "Adopt Stage 2 Context",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/run-stage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { stage: 'final_email', context: $json } }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5260,
+        240
+      ],
+      "id": "16db9d5d-12ca-427f-addc-cbb3f96b297c",
+      "name": "Run Stage 3 Final Email",
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json || {};\nconst err = payload.error;\nif (err) {\n  throw new Error(typeof err === 'string' ? err : (err.message || JSON.stringify(err)));\n}\nconst context = payload.context && typeof payload.context === 'object'\n  ? payload.context\n  : null;\nif (!context) throw new Error('Stage 3 response did not contain a context object.');\nif (!context.lead?.email) throw new Error('Stage 3 context lost lead.email.');\n\nconst status = String(context.status || '').trim().toLowerCase();\nif (status === 'failed' || status === 'error') {\n  throw new Error(String(context.operator_action || context.reason || 'Stage 3 returned failed status.'));\n}\n\nconst stage = context.stage3;\nif (!stage || typeof stage !== 'object') {\n  throw new Error('Stage 3 response did not contain context.stage3.');\n}\nconst hasOutput = [stage.responseText, stage.mdPath, stage.path, stage.filePath, stage.output]\n  .some(v => String(v ?? '').trim() !== '');\nif (!hasOutput) throw new Error('Stage 3 completed without a usable output or artifact path.');\n\nreturn [{ json: {\n  ...context,\n  status: 'Processing',\n  stage3_status: 'completed',\n  updated_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5500,
+        240
+      ],
+      "id": "c478aaa8-38d6-4a99-9c69-7030b7ff76b2",
+      "name": "Adopt Stage 3 Context",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Format Email').item.json.email_subject }}",
+        "message": "={{ $('Format Email').item.json.email_body }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "={{ Object.keys($binary).join(',') }}"
+              }
+            ]
+          },
+          "sendTo": "={{ $('Format Email').item.json.recipient }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        6700,
+        80
+      ],
+      "id": "7c504cbc-972a-474e-9921-454cda1c09bd",
+      "name": "Create Gmail Draft",
+      "webhookId": "32bf04d3-b157-4bff-b74b-926dfedc4bae",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fcpyBkNQ2dIvn8tX",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const warnings = [\n  $json.email_warning,\n  $json.attachment_warning,\n  $json.gmail_verification_warning,\n].filter(Boolean);\n\nreturn [{ json: {\n  ...$json,\n  status: 'Draft_Created',\n  failed_stage: '',\n  error_code: '',\n  error_message: '',\n  retryable: false,\n  draft_may_exist: true,\n  gmail_verified: true,\n  updated_at: new Date().toISOString(),\n  operator_action: warnings.length\n    ? `Draft created and verified. Review in Gmail before sending. Warnings: ${warnings.join(' | ')}`\n    : 'Draft created and verified. Review in Gmail before sending.',\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7660,
+        240
+      ],
+      "id": "26cef5f1-3352-450f-b2cf-74853f1d258d",
+      "name": "Set Draft Created",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1640,
+        0
+      ],
+      "id": "2fd606fc-55fa-44c8-a8ae-7e2e0a705767",
+      "name": "Read Tracker Sheet",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Select up to Config.batch_size eligible leads. Status and email comparisons are normalized.\nconst cfg = $('Config').first().json;\nconst str = (v) => (v === null || v === undefined) ? '' : String(v);\nconst norm = (v) => str(v).trim().toLowerCase();\nconst normStatus = (v) => norm(v).replace(/[\\s-]+/g, '_');\nconst normLi = (v) => norm(v).replace(/^https?:\\/\\/(www\\.)?/, '').replace(/\\/+$/, '');\nconst emailOkay = (v) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(str(v).trim());\nconst dateMs = (v) => {\n  const ms = Date.parse(str(v));\n  return Number.isFinite(ms) ? ms : 0;\n};\n\nconst paused = cfg.paused === true || norm(cfg.paused) === 'true';\nconst batchSize = Math.max(1, Number(cfg.batch_size || 10));\nconst maxAttempts = Math.max(1, Number(cfg.max_attempts || 3));\nconst staleMs = Math.max(1, Number(cfg.processing_stale_minutes || 60)) * 60 * 1000;\n\nlet executionId = '';\ntry { executionId = str($execution.id); } catch (e) {}\nconst runId = executionId\n  ? `exec_${executionId}`\n  : `run_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;\n\nif (paused) {\n  return [{ json: {\n    is_lead: false,\n    no_work: true,\n    reason: 'Pipeline is paused in Config.paused=true.',\n    run_id: runId,\n  } }];\n}\n\nconst leadRows = $('Read Leads Tab').all().map(i => i.json || {});\nif (!leadRows.length) {\n  return [{ json: {\n    is_lead: false,\n    no_work: true,\n    reason: 'Leads tab returned no rows.',\n    run_id: runId,\n  } }];\n}\n\nlet trackerRows = [];\ntry {\n  trackerRows = $('Read Tracker Sheet').all()\n    .map(i => i.json || {})\n    .filter(r => Object.values(r).some(v => str(v).trim() !== ''));\n} catch (e) {}\n\n// Keep the newest row for each normalized email if duplicate tracker rows exist.\nconst trackerByEmail = new Map();\nfor (const row of trackerRows) {\n  const key = norm(row.email);\n  if (!key) continue;\n  const previous = trackerByEmail.get(key);\n  if (!previous || dateMs(row.updated_at) >= dateMs(previous.updated_at)) {\n    trackerByEmail.set(key, row);\n  }\n}\n\nconst TERMINAL = new Set([\n  'draft_created',\n  'skip',\n  'do_not_contact',\n  'unsubscribed',\n  'manual_review',\n  'draft_unverified',\n]);\nconst doneEmail = new Set();\nconst doneLi = new Set();\n\nfor (const row of trackerByEmail.values()) {\n  const status = normStatus(row.status);\n  const attempts = Number(row.attempts || 0);\n  const burnt = status === 'failed' && attempts >= maxAttempts;\n  const processingIsFresh = status === 'processing' &&\n    dateMs(row.updated_at) > 0 &&\n    (Date.now() - dateMs(row.updated_at)) < staleMs;\n\n  if (!TERMINAL.has(status) && !burnt && !processingIsFresh) continue;\n  const email = norm(row.email);\n  const linkedin = normLi(row.linkedinUrl || row.linkedin_url);\n  if (email) doneEmail.add(email);\n  if (linkedin) doneLi.add(linkedin);\n}\n\nconst joinArr = (row, prefix) => {\n  const values = [];\n  for (let i = 0; i < 40; i++) {\n    const value = str(row[`${prefix}/${i}`]).trim();\n    if (value) values.push(value);\n  }\n  return values.join(', ');\n};\n\nconst seenEmail = new Set();\nconst seenLi = new Set();\nconst out = [];\n\nfor (const raw of leadRows) {\n  const row = {};\n  for (const [key, value] of Object.entries(raw)) row[key] = str(value);\n\n  const email = norm(row.email);\n  if (!emailOkay(email)) continue;\n  const linkedin = normLi(row.linkedinUrl);\n\n  if (doneEmail.has(email) || seenEmail.has(email)) continue;\n  if (linkedin && (doneLi.has(linkedin) || seenLi.has(linkedin))) continue;\n\n  seenEmail.add(email);\n  if (linkedin) seenLi.add(linkedin);\n\n  const previous = trackerByEmail.get(email) || {};\n  const attempts = Number(previous.attempts || 0) + 1;\n\n  const lead = {\n    ...row,\n    email,\n    name: row.fullName || [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,\n    title: row.position || row.title || '',\n    organization_name: row.companyName || 'Unknown Company',\n    organization_industry: joinArr(row, 'companyIndustry'),\n    organization_size: row.companySizeRange || row.companySize || '',\n    organization_founded_year: row.foundedYear || '',\n    organization_description: row.companyDescription || '',\n    organization_specialities: joinArr(row, 'companySpecialties'),\n    organization_website: row.companyDomain || '',\n    organization_linkedin: row.companyLinkedinUrl || '',\n    linkedin_url: row.linkedinUrl || '',\n    seniority: row.seniority || '',\n    functional: row.functional || joinArr(row, 'functions'),\n    phone_numbers: row.phone || '',\n    all_emails: email,\n    city: row.personCity || row.companyCity || '',\n    state: row.personState || row.companyState || '',\n    country: row.personCountry || row.companyCountry || '',\n    annual_revenue: row.annualRevenue || '',\n    total_funding: row.totalFunding || '',\n    funding_stage: row.fundingStage || '',\n    technologies: joinArr(row, 'technologies'),\n    company_audience: row.companyAudience || '',\n    email_status: row.emailStatus || '',\n  };\n\n  const provider = String(cfg.ai_provider || 'chatgpt');\n  const workerUrl = String(cfg[`${provider}_worker_url`] || cfg.chatgpt_worker_url || '');\n\n  out.push({ json: {\n    is_lead: true,\n    no_work: false,\n    execution_id: executionId,\n    run_id: runId,\n    status: 'Fetched',\n    operator_action: `Selected as lead ${out.length + 1}/${batchSize}.`,\n    updated_at: new Date().toISOString(),\n    attempts,\n    lead,\n    raw_apollo_json: JSON.stringify(lead),\n    idempotency_key: email,\n    worker_url: workerUrl,\n    grok_worker_url: workerUrl,\n  } });\n\n  if (out.length >= batchSize) break;\n}\n\nif (!out.length) {\n  return [{ json: {\n    is_lead: false,\n    no_work: true,\n    reason: `No eligible leads. Leads rows=${leadRows.length}; Tracker rows=${trackerRows.length}; batch_size=${batchSize}; max_attempts=${maxAttempts}.`,\n    run_id: runId,\n    execution_id: executionId,\n  } }];\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        0
+      ],
+      "id": "ac940666-cc64-44d8-b9c1-49b8e2b93cb4",
+      "name": "Select Batch"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2360,
+        120
+      ],
+      "id": "5a7e6d46-5881-48ef-bce0-8da0f23794d2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json[$('Config').first().json.ai_provider + '_worker_url'] + '/new-chat' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { context: $json } }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3820,
+        240
+      ],
+      "id": "d2a1af9a-a930-44e0-a3eb-c4e5f35425d0",
+      "name": "New Chat",
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const a3 = $('Adopt Stage 3 Context').item.json || $json || {};\nconst cfg = $('Config').first().json;\nconst lead = a3.lead || {};\nconst raw = String(a3.stage3?.responseText || a3.stage3?.output || '').trim();\nconst recipient = String(lead.email || '').trim().toLowerCase();\n\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recipient)) {\n  throw new Error(`Invalid recipient email: ${recipient || 'missing'}`);\n}\nif (!raw) throw new Error('Stage 3 returned an empty final-email response.');\n\nconst subjectMatch = raw.match(/^\\s*Subject:\\s*(.+)$/im);\nlet subject = subjectMatch ? subjectMatch[1].trim() : '';\nlet body = raw;\nif (subjectMatch) {\n  const index = raw.indexOf(subjectMatch[0]) + subjectMatch[0].length;\n  body = raw.slice(index).replace(/^\\s*\\r?\\n/, '').trim();\n} else {\n  body = raw.replace(/^\\s*To:.*$/im, '').trim();\n}\nbody = body\n  .replace(/^\\s*Subject:.*$/im, '')\n  .replace(/\\n+\\s*(Best|Regards|Sincerely),?\\s*(\\n[^\\n]*)?\\s*$/i, '')\n  .trim();\n\nif (!subject) subject = `Quick question about ${lead.organization_name || 'your company'}`;\nlet signature = String(cfg.email_signature || '').trim();\nconst unresolved = /\\[(your name|your title|company|insert|name)\\]|you@example\\.com|<[^>]+>/i;\nlet emailWarning = '';\nif (signature && unresolved.test(signature)) {\n  emailWarning = 'Configured signature contained placeholders and was omitted. Update Config.email_signature before production use.';\n  signature = '';\n}\nif (unresolved.test(subject) || unresolved.test(body)) {\n  throw new Error('Generated email contains unresolved placeholder text.');\n}\nconst emailBody = signature ? `${body}\\n\\n${signature}` : body;\nconst minChars = Math.max(20, Number(cfg.min_email_body_chars || 80));\n\nif (subject.length < 3 || subject.length > 200) {\n  throw new Error(`Email subject length is invalid (${subject.length} characters).`);\n}\nif (emailBody.length < minChars) {\n  throw new Error(`Email body is too short (${emailBody.length} characters; minimum ${minChars}).`);\n}\nif (!body || (signature && emailBody.trim() === signature)) {\n  throw new Error('Email body is empty or signature-only.');\n}\n\nreturn [{ json: {\n  ...a3,\n  email_subject: subject,\n  email_body: emailBody,\n  recipient,\n  formatted_email_valid: true,\n  email_warning: emailWarning,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5740,
+        240
+      ],
+      "id": "27dab851-15e4-4f06-8a22-c4dd98d2c596",
+      "name": "Format Email",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $('Config').first().json.attachment_dir + '/*' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        5980,
+        240
+      ],
+      "id": "b17b5a70-414c-4429-a789-c56b669ae3fc",
+      "name": "Read Attachment",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2620,
+        -240
+      ],
+      "id": "4affdd9a-3951-4bf4-9aeb-e9220db18afd",
+      "name": "Read Batch Result",
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selected = $('Select Batch').all()\n  .map(i => i.json || {})\n  .filter(i => i.is_lead === true);\nconst expected = selected.length;\nconst norm = (v) => String(v ?? '').trim().toLowerCase();\nconst normStatus = (v) => norm(v).replace(/[\\s-]+/g, '_');\nconst dateMs = (v) => {\n  const ms = Date.parse(String(v ?? ''));\n  return Number.isFinite(ms) ? ms : 0;\n};\n\nlet rows = [];\ntry {\n  rows = $('Read Batch Result Retry').all().map(i => i.json || {});\n} catch (e) {}\nif (!rows.length) {\n  try { rows = $('Read Batch Result').all().map(i => i.json || {}); } catch (e) {}\n}\n\nconst selectedByKey = new Map(selected.map(item => [\n  `${norm(item.lead?.email)}|${String(item.run_id || '')}`,\n  item,\n]));\n\n// Deduplicate by normalized email + current run ID, keeping the newest row.\nconst latest = new Map();\nfor (const row of rows) {\n  const key = `${norm(row.email)}|${String(row.run_id || '')}`;\n  if (!selectedByKey.has(key)) continue;\n  const previous = latest.get(key);\n  if (!previous || dateMs(row.updated_at) >= dateMs(previous.updated_at)) latest.set(key, row);\n}\n\nconst results = [];\nfor (const [key, item] of selectedByKey.entries()) {\n  const row = latest.get(key);\n  results.push({\n    email: norm(item.lead?.email),\n    run_id: String(item.run_id || ''),\n    status: row ? String(row.status || 'No Status') : 'Missing',\n    normalized_status: row ? normStatus(row.status) : 'missing',\n    operator_action: row ? String(row.operator_action || '') : 'No current-run Tracker row was visible.',\n  });\n}\n\nconst drafted = results.filter(r => r.normalized_status === 'draft_created').length;\nconst failed = results.filter(r => r.normalized_status === 'failed').length;\nconst manualReview = results.filter(r => ['manual_review', 'draft_unverified'].includes(r.normalized_status)).length;\nconst missing = results.filter(r => r.normalized_status === 'missing').length;\nconst other = results.filter(r => ![\n  'draft_created', 'failed', 'manual_review', 'draft_unverified', 'missing'\n].includes(r.normalized_status)).length;\n\nlet outcome = 'success';\nif (missing > 0 || other > 0) outcome = 'consistency_error';\nelse if (drafted === expected && expected > 0) outcome = 'success';\nelse if (drafted > 0) outcome = 'warning';\nelse outcome = 'error';\n\nconst summary = `Batch: ${drafted} drafted, ${failed} failed, ${manualReview} manual review, ${missing} missing (of ${expected} leads).`;\nconst details = results\n  .filter(r => r.normalized_status !== 'draft_created')\n  .map(r => `${r.email}: ${r.status}${r.operator_action ? ` — ${r.operator_action}` : ''}`);\n\nreturn [{ json: {\n  outcome,\n  expected,\n  drafted,\n  failed,\n  manual_review: manualReview,\n  missing,\n  other,\n  summary,\n  details,\n  error_message: details.length ? summary + ' | ' + details.join(' | ') : summary,\n  results,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3820,
+        -240
+      ],
+      "id": "b9aecd81-4e91-42e7-8cd0-01389cb21791",
+      "name": "Batch Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst fe = $('Format Email').item.json;\nconst cfg = $('Config').first().json;\nconst maxFiles = Math.max(0, Number(cfg.max_attachment_files || 5));\nconst maxBytes = Math.max(0, Number(cfg.max_attachment_total_bytes || 20000000));\nconst allowed = new Set(String(cfg.allowed_attachment_extensions || '')\n  .split(',').map(v => v.trim().toLowerCase()).filter(Boolean));\n\nconst binary = {};\nconst warnings = [];\nlet count = 0;\nlet totalBytes = 0;\n\nfor (const item of items) {\n  if (!item.binary) {\n    if (item.json?.error?.message || item.json?.message) {\n      warnings.push(`Attachment read skipped: ${item.json?.error?.message || item.json?.message}`);\n    }\n    continue;\n  }\n  for (const key of Object.keys(item.binary)) {\n    const file = item.binary[key] || {};\n    const fileName = String(file.fileName || file.fileName || `attachment_${count}`);\n    const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';\n    const size = Number(file.fileSize || file.fileSizeBytes || 0);\n\n    if (allowed.size && ext && !allowed.has(ext)) {\n      warnings.push(`Skipped disallowed attachment: ${fileName}`);\n      continue;\n    }\n    if (count >= maxFiles) {\n      warnings.push(`Skipped ${fileName}: maximum attachment count ${maxFiles} reached.`);\n      continue;\n    }\n    if (size > 0 && totalBytes + size > maxBytes) {\n      warnings.push(`Skipped ${fileName}: attachment size limit would be exceeded.`);\n      continue;\n    }\n    binary[`attachment_${count}`] = file;\n    count++;\n    totalBytes += Math.max(0, size);\n  }\n}\n\nconst out = {\n  json: {\n    ...fe,\n    attachment_count: count,\n    attachment_total_bytes: totalBytes,\n    attachment_warning: warnings.join(' | '),\n  },\n};\nif (count > 0) out.binary = binary;\nreturn [out];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6220,
+        240
+      ],
+      "id": "f267dea3-ab1c-47ec-a309-d3887c5b38e1",
+      "name": "Collect Attachments",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-0000-4000-8000-000000000702",
+              "leftValue": "={{ $json.attachment_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6460,
+        240
+      ],
+      "id": "f941728b-d52e-4401-a666-bc11a89fa5c6",
+      "name": "Has Attachments?"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Format Email').item.json.email_subject }}",
+        "message": "={{ $('Format Email').item.json.email_body }}",
+        "options": {
+          "sendTo": "={{ $('Format Email').item.json.recipient }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        6700,
+        400
+      ],
+      "id": "807cfa99-1a2c-4001-91c7-8e66949d214c",
+      "name": "Create Gmail Draft (No Attachment)",
+      "webhookId": "6a1cc464-8cc1-446d-9810-76db9b75e729",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fcpyBkNQ2dIvn8tX",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.leads_tab }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1400,
+        0
+      ],
+      "id": "6648cb30-a972-41b2-b657-e6f183ac0428",
+      "name": "Read Leads Tab",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst clean = (v) => {\n  if (v === null || v === undefined) return '';\n  if (typeof v === 'object') {\n    try { return JSON.stringify(v); } catch (e) { return String(v); }\n  }\n  return String(v);\n};\nconst clip = (v, max = 4000) => clean(v).slice(0, max);\nconst stageValue = (stage) => {\n  if (!stage || typeof stage !== 'object') return '';\n  return clip(stage.mdPath || stage.path || stage.filePath || stage.responseText || stage.output || stage);\n};\n\nlet a1 = {}, a2 = {}, a3 = {}, formatted = {}, created = {};\ntry { a1 = $('Adopt Stage 1 Context').item.json || {}; } catch (e) {}\ntry { a2 = $('Adopt Stage 2 Context').item.json || {}; } catch (e) {}\ntry { a3 = $('Adopt Stage 3 Context').item.json || {}; } catch (e) {}\ntry { formatted = $('Format Email').item.json || {}; } catch (e) {}\ntry { created = $('Preserve Draft Creation').item.json || {}; } catch (e) {}\n\nconst lead = current.lead || a3.lead || a2.lead || a1.lead || loop.lead || {};\nconst status = clean(current.status || 'Failed').trim() || 'Failed';\nconst success = status.toLowerCase() === 'draft_created';\nconst errorMessage = clip(\n  current.error_message ||\n  (typeof current.error === 'string' ? current.error : current.error?.message) ||\n  current.message ||\n  ''\n);\n\nconst gmailDraftId = clean(\n  current.gmail_draft_id || created.gmail_draft_id || current.id || ''\n);\nconst gmailMessageId = clean(\n  current.gmail_message_id || created.gmail_message_id || current.messageId || ''\n);\n\nreturn [{ json: {\n  email: clean(lead.email).trim().toLowerCase(),\n  fullName: clean(lead.fullName || lead.name),\n  companyName: clean(lead.companyName || lead.organization_name),\n  companyLinkedinUrl: clean(lead.companyLinkedinUrl || lead.organization_linkedin),\n  linkedinUrl: clean(lead.linkedinUrl || lead.linkedin_url),\n  position: clean(lead.position || lead.title),\n  emailStatus: clean(lead.emailStatus || lead.email_status),\n  rowType: clean(lead.rowType || 'tracker'),\n\n  status,\n  operator_action: clip(current.operator_action || (success\n    ? 'Draft created and verified. Review in Gmail before sending.'\n    : `Pipeline failed: ${errorMessage || 'Unknown error'}`)),\n  failed_stage: clean(current.failed_stage),\n  error_code: clean(current.error_code),\n  error_message: errorMessage,\n  retryable: clean(current.retryable ?? (!success)),\n  draft_may_exist: clean(current.draft_may_exist ?? Boolean(gmailDraftId)),\n  gmail_verified: clean(current.gmail_verified ?? success),\n\n  run_id: clean(current.run_id || a3.run_id || a2.run_id || a1.run_id || loop.run_id),\n  execution_id: clean(current.execution_id || loop.execution_id),\n  processing_started_at: clean(current.processing_started_at || loop.processing_started_at),\n  updated_at: clean(current.updated_at || new Date().toISOString()),\n\n  stage1: stageValue(a3.stage1 || a2.stage1 || a1.stage1),\n  stage1_status: clean(a3.stage1_status || a2.stage1_status || a1.stage1_status || (a1.stage1 ? 'completed' : '')),\n  stage1_error: clean(current.failed_stage === 'stage1_research' ? errorMessage : ''),\n  stage2: stageValue(a3.stage2 || a2.stage2),\n  stage2_status: clean(a3.stage2_status || a2.stage2_status || (a2.stage2 ? 'completed' : '')),\n  stage2_error: clean(current.failed_stage === 'stage2_review' ? errorMessage : ''),\n  stage3: stageValue(a3.stage3),\n  stage3_status: clean(a3.stage3_status || (a3.stage3 ? 'completed' : '')),\n  stage3_error: clean(current.failed_stage === 'stage3_final_email' ? errorMessage : ''),\n\n  attempts: clean(loop.attempts || current.attempts || 1),\n  idempotency_key: clean(loop.idempotency_key || current.idempotency_key || lead.email).trim().toLowerCase(),\n  id: gmailDraftId || clean(current.id || ''),\n  email_subject: clean(current.email_subject || created.email_subject || formatted.email_subject),\n  recipient: clean(current.recipient || created.recipient || formatted.recipient || lead.email),\n  gmail_draft_id: gmailDraftId,\n  gmail_message_id: gmailMessageId,\n  attachment_count: clean(current.attachment_count ?? created.attachment_count ?? formatted.attachment_count ?? 0),\n  attachment_warning: clip(current.attachment_warning || created.attachment_warning || formatted.attachment_warning),\n  email_warning: clip(current.email_warning || created.email_warning || formatted.email_warning),\n  gmail_verification_warning: clip(current.gmail_verification_warning || created.gmail_verification_warning || formatted.gmail_verification_warning),\n  verified_recipients: clip(current.verified_recipients || created.verified_recipients || ''),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7900,
+        420
+      ],
+      "id": "0c6eac91-7939-4aa7-b3fa-ff374881a3ee",
+      "name": "Build Final Tracker Record"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "get",
+        "messageId": "={{ $json.gmail_draft_id }}",
+        "options": {
+          "downloadAttachments": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        7180,
+        240
+      ],
+      "id": "762562e2-bea2-4ede-a9db-14a2e2453e46",
+      "name": "Verify Gmail Draft Exists",
+      "webhookId": "10fc496c-9bce-4073-b3b7-551c2110ad34",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fcpyBkNQ2dIvn8tX",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "annualRevenue",
+              "displayName": "annualRevenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyAudience",
+              "displayName": "companyAudience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyCity",
+              "displayName": "companyCity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyCountry",
+              "displayName": "companyCountry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyDescription",
+              "displayName": "companyDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyDomain",
+              "displayName": "companyDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/0",
+              "displayName": "companyIndustry/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/1",
+              "displayName": "companyIndustry/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/2",
+              "displayName": "companyIndustry/2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/3",
+              "displayName": "companyIndustry/3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/4",
+              "displayName": "companyIndustry/4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/5",
+              "displayName": "companyIndustry/5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySize",
+              "displayName": "companySize",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySizeRange",
+              "displayName": "companySizeRange",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/0",
+              "displayName": "companySpecialties/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/1",
+              "displayName": "companySpecialties/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/2",
+              "displayName": "companySpecialties/2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/3",
+              "displayName": "companySpecialties/3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/4",
+              "displayName": "companySpecialties/4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/5",
+              "displayName": "companySpecialties/5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/6",
+              "displayName": "companySpecialties/6",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/7",
+              "displayName": "companySpecialties/7",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyState",
+              "displayName": "companyState",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "emailStatus",
+              "displayName": "emailStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "firstName",
+              "displayName": "firstName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "foundedYear",
+              "displayName": "foundedYear",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "functional",
+              "displayName": "functional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "functions/0",
+              "displayName": "functions/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "functions/1",
+              "displayName": "functions/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fundingStage",
+              "displayName": "fundingStage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastName",
+              "displayName": "lastName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personCity",
+              "displayName": "personCity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personCountry",
+              "displayName": "personCountry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personState",
+              "displayName": "personState",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rowType",
+              "displayName": "rowType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "seniority",
+              "displayName": "seniority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/0",
+              "displayName": "technologies/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/1",
+              "displayName": "technologies/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/2",
+              "displayName": "technologies/2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/3",
+              "displayName": "technologies/3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/4",
+              "displayName": "technologies/4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/5",
+              "displayName": "technologies/5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/6",
+              "displayName": "technologies/6",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/7",
+              "displayName": "technologies/7",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/8",
+              "displayName": "technologies/8",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "totalFunding",
+              "displayName": "totalFunding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attempts",
+              "displayName": "attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "operator_action",
+              "displayName": "operator_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage1",
+              "displayName": "stage1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage2",
+              "displayName": "stage2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage3",
+              "displayName": "stage3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "idempotency_key",
+              "displayName": "idempotency_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_subject",
+              "displayName": "email_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recipient",
+              "displayName": "recipient",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_draft_id",
+              "displayName": "gmail_draft_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_message_id",
+              "displayName": "gmail_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "failed_stage",
+              "displayName": "failed_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_code",
+              "displayName": "error_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "retryable",
+              "displayName": "retryable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft_may_exist",
+              "displayName": "draft_may_exist",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_verified",
+              "displayName": "gmail_verified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processing_started_at",
+              "displayName": "processing_started_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage1_status",
+              "displayName": "stage1_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage1_error",
+              "displayName": "stage1_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage2_status",
+              "displayName": "stage2_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage2_error",
+              "displayName": "stage2_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage3_status",
+              "displayName": "stage3_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage3_error",
+              "displayName": "stage3_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attachment_count",
+              "displayName": "attachment_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attachment_warning",
+              "displayName": "attachment_warning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_warning",
+              "displayName": "email_warning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_verification_warning",
+              "displayName": "gmail_verification_warning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "verified_recipients",
+              "displayName": "verified_recipients",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.3,
+      "position": [
+        8140,
+        420
+      ],
+      "id": "1be699dc-1287-458e-ab6b-acd15a926cc3",
+      "name": "Upsert Final Tracker Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3aebc2d7-7511-4bdd-89a6-f953287b89ea",
+              "leftValue": "={{ $json.is_lead === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2120,
+        0
+      ],
+      "id": "1b79aae3-7810-4ded-87a4-a77b9a7df258",
+      "name": "Has Eligible Lead?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: {\n  outcome: 'no_work',\n  summary: String($json.reason || 'No eligible leads were available.'),\n  run_id: $json.run_id || '',\n  execution_id: $json.execution_id || '',\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2360,
+        -200
+      ],
+      "id": "cbad379c-7939-4345-ac14-af37b1da5eba",
+      "name": "No Work Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || $json || {};\nconst lead = loop.lead || {};\nconst now = new Date().toISOString();\nreturn [{ json: {\n  email: String(lead.email || '').trim().toLowerCase(),\n  fullName: String(lead.fullName || lead.name || ''),\n  companyName: String(lead.companyName || lead.organization_name || ''),\n  companyLinkedinUrl: String(lead.companyLinkedinUrl || lead.organization_linkedin || ''),\n  linkedinUrl: String(lead.linkedinUrl || lead.linkedin_url || ''),\n  position: String(lead.position || lead.title || ''),\n  emailStatus: String(lead.emailStatus || lead.email_status || ''),\n  rowType: String(lead.rowType || 'tracker'),\n  status: 'Processing',\n  operator_action: 'Lead claimed by this execution and processing has started.',\n  run_id: String(loop.run_id || ''),\n  execution_id: String(loop.execution_id || ''),\n  processing_started_at: now,\n  updated_at: now,\n  attempts: String(loop.attempts || 1),\n  idempotency_key: String(loop.idempotency_key || lead.email || '').trim().toLowerCase(),\n  failed_stage: '',\n  error_code: '',\n  error_message: '',\n  retryable: 'true',\n  draft_may_exist: 'false',\n  gmail_verified: 'false',\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2380,
+        240
+      ],
+      "id": "99d06035-f375-4ef9-be83-4ad718062cd7",
+      "name": "Build Processing Tracker Record"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "annualRevenue",
+              "displayName": "annualRevenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyAudience",
+              "displayName": "companyAudience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyCity",
+              "displayName": "companyCity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyCountry",
+              "displayName": "companyCountry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyDescription",
+              "displayName": "companyDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyDomain",
+              "displayName": "companyDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/0",
+              "displayName": "companyIndustry/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/1",
+              "displayName": "companyIndustry/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/2",
+              "displayName": "companyIndustry/2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/3",
+              "displayName": "companyIndustry/3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/4",
+              "displayName": "companyIndustry/4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyIndustry/5",
+              "displayName": "companyIndustry/5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyLinkedinUrl",
+              "displayName": "companyLinkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySize",
+              "displayName": "companySize",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySizeRange",
+              "displayName": "companySizeRange",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/0",
+              "displayName": "companySpecialties/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/1",
+              "displayName": "companySpecialties/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/2",
+              "displayName": "companySpecialties/2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/3",
+              "displayName": "companySpecialties/3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/4",
+              "displayName": "companySpecialties/4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/5",
+              "displayName": "companySpecialties/5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/6",
+              "displayName": "companySpecialties/6",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companySpecialties/7",
+              "displayName": "companySpecialties/7",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyState",
+              "displayName": "companyState",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "emailStatus",
+              "displayName": "emailStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "firstName",
+              "displayName": "firstName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "foundedYear",
+              "displayName": "foundedYear",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "functional",
+              "displayName": "functional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "functions/0",
+              "displayName": "functions/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "functions/1",
+              "displayName": "functions/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fundingStage",
+              "displayName": "fundingStage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastName",
+              "displayName": "lastName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personCity",
+              "displayName": "personCity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personCountry",
+              "displayName": "personCountry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personState",
+              "displayName": "personState",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rowType",
+              "displayName": "rowType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "seniority",
+              "displayName": "seniority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/0",
+              "displayName": "technologies/0",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/1",
+              "displayName": "technologies/1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/2",
+              "displayName": "technologies/2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/3",
+              "displayName": "technologies/3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/4",
+              "displayName": "technologies/4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/5",
+              "displayName": "technologies/5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/6",
+              "displayName": "technologies/6",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/7",
+              "displayName": "technologies/7",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "technologies/8",
+              "displayName": "technologies/8",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "totalFunding",
+              "displayName": "totalFunding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attempts",
+              "displayName": "attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "operator_action",
+              "displayName": "operator_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage1",
+              "displayName": "stage1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage2",
+              "displayName": "stage2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage3",
+              "displayName": "stage3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "idempotency_key",
+              "displayName": "idempotency_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_subject",
+              "displayName": "email_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recipient",
+              "displayName": "recipient",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_draft_id",
+              "displayName": "gmail_draft_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_message_id",
+              "displayName": "gmail_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "failed_stage",
+              "displayName": "failed_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_code",
+              "displayName": "error_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "retryable",
+              "displayName": "retryable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft_may_exist",
+              "displayName": "draft_may_exist",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_verified",
+              "displayName": "gmail_verified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processing_started_at",
+              "displayName": "processing_started_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage1_status",
+              "displayName": "stage1_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage1_error",
+              "displayName": "stage1_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage2_status",
+              "displayName": "stage2_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage2_error",
+              "displayName": "stage2_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage3_status",
+              "displayName": "stage3_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage3_error",
+              "displayName": "stage3_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attachment_count",
+              "displayName": "attachment_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attachment_warning",
+              "displayName": "attachment_warning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_warning",
+              "displayName": "email_warning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.3,
+      "position": [
+        2620,
+        240
+      ],
+      "id": "e1121a8a-a9b3-423e-83ab-fc78b9f30a42",
+      "name": "Upsert Processing Claim",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2860,
+        240
+      ],
+      "id": "37cfce50-5b65-41e2-bcc5-58a96af0defe",
+      "name": "Wait for Processing Claim",
+      "webhookId": "66777aff-0f1a-408e-ba31-dee3c923555a"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3100,
+        240
+      ],
+      "id": "dd7c50a1-0a71-4f1a-a584-fd5108aa4cfa",
+      "name": "Read Processing Claim",
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst email = String(loop.lead?.email || '').trim().toLowerCase();\nconst runId = String(loop.run_id || '');\nconst rows = $input.all().map(i => i.json || {});\nconst norm = (v) => String(v ?? '').trim().toLowerCase();\nconst normStatus = (v) => norm(v).replace(/[\\s-]+/g, '_');\nconst dateMs = (v) => {\n  const ms = Date.parse(String(v ?? ''));\n  return Number.isFinite(ms) ? ms : 0;\n};\n\nconst matches = rows.filter(r => norm(r.email) === email);\nconst latest = matches.sort((a, b) => dateMs(b.updated_at) - dateMs(a.updated_at))[0] || {};\nconst claim_ok = normStatus(latest.status) === 'processing' && String(latest.run_id || '') === runId;\n\nreturn [{ json: {\n  ...loop,\n  claim_ok,\n  processing_started_at: String(latest.processing_started_at || loop.processing_started_at || ''),\n  claim_reason: claim_ok\n    ? 'Processing claim verified.'\n    : `Processing claim was not owned by this execution. Tracker run_id=${String(latest.run_id || 'missing')}; status=${String(latest.status || 'missing')}.`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3340,
+        240
+      ],
+      "id": "eb3fef86-9bb6-4184-aa62-73e328d8c7b7",
+      "name": "Verify Processing Claim"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e01b1a85-f195-480c-972b-90acd8815fc8",
+              "leftValue": "={{ $json.claim_ok === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3580,
+        240
+      ],
+      "id": "a30df4dd-f0d0-4e57-b9fe-f23324142d23",
+      "name": "Processing Claim Owned?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nreturn [{ json: {\n  ...loop,\n  status: 'Claim_Conflict',\n  failed_stage: 'processing_claim',\n  operator_action: String($json.claim_reason || 'Processing claim conflict; lead was not processed.'),\n  updated_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3820,
+        500
+      ],
+      "id": "b78e7476-9bfe-4f14-a363-c34ca0da0d46",
+      "name": "Claim Conflict Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst payload = $json || {};\nconst err = payload.error;\nif (err) {\n  throw new Error(typeof err === 'string' ? err : (err.message || JSON.stringify(err)));\n}\nif (String(payload.status || '').trim().toLowerCase() === 'failed') {\n  throw new Error(String(payload.reason || payload.message || 'New chat worker returned failed status.'));\n}\n\nconst incoming = payload.context && typeof payload.context === 'object'\n  ? payload.context\n  : {};\nconst merged = {\n  ...loop,\n  ...incoming,\n  lead: incoming.lead || loop.lead,\n  run_id: incoming.run_id || loop.run_id,\n  execution_id: incoming.execution_id || loop.execution_id,\n  idempotency_key: incoming.idempotency_key || loop.idempotency_key,\n  attempts: incoming.attempts || loop.attempts,\n};\n\nfor (const key of ['chat_id', 'chatId', 'session_id', 'sessionId', 'conversation_id', 'conversationId']) {\n  if (payload[key] !== undefined && merged[key] === undefined) merged[key] = payload[key];\n}\nreturn [{ json: merged }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4060,
+        240
+      ],
+      "id": "af07780a-3171-431e-9d52-e16c5d9090cc",
+      "name": "Adopt New Chat Context",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const created = $json || {};\nconst expected = $('Collect Attachments').item.json || $('Format Email').item.json || {};\nconst draftId = String(created.id || created.draftId || created.draft_id || '').trim();\nconst messageId = String(created.messageId || created.message_id || created.message?.id || '').trim();\nif (!draftId) throw new Error('Gmail create-draft response did not contain a draft ID.');\n\nreturn [{ json: {\n  ...expected,\n  gmail_draft_id: draftId,\n  gmail_message_id: messageId,\n  draft_create_response: created,\n  draft_created_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6940,
+        240
+      ],
+      "id": "52c8b009-6b4f-4e19-afee-fc1b7a7e1da4",
+      "name": "Preserve Draft Creation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const verified = $json || {};\nconst created = $('Preserve Draft Creation').item.json || {};\nconst expectedSubject = String(created.email_subject || '').trim();\nconst expectedRecipient = String(created.recipient || '').trim().toLowerCase();\nconst expectedBody = String(created.email_body || '').trim();\n\nconst extractEmailsFromString = (value) => {\n  const matches = String(value || '').toLowerCase().match(/[a-z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+/g);\n  return matches || [];\n};\n\nconst collectEmails = (value, depth) => {\n  depth = depth || 0;\n  if (depth > 5 || value === null || value === undefined) return [];\n  if (typeof value === 'string' || typeof value === 'number') {\n    return extractEmailsFromString(value);\n  }\n  if (Array.isArray(value)) {\n    let out = [];\n    for (const entry of value) out = out.concat(collectEmails(entry, depth + 1));\n    return out;\n  }\n  if (typeof value === 'object') {\n    let out = [];\n    const addressKeys = ['address', 'value', 'text', 'html', 'email', 'emailAddress'];\n    for (const key of addressKeys) {\n      if (Object.prototype.hasOwnProperty.call(value, key)) {\n        out = out.concat(collectEmails(value[key], depth + 1));\n      }\n    }\n    return out;\n  }\n  return [];\n};\n\nconst headerValue = (name) => {\n  const target = String(name || '').toLowerCase();\n  const candidates = [\n    verified.headers,\n    verified.message && verified.message.headers,\n    verified.payload && verified.payload.headers,\n    verified.message && verified.message.payload && verified.message.payload.headers,\n  ];\n\n  for (const headers of candidates) {\n    if (!headers) continue;\n    if (Array.isArray(headers)) {\n      const found = headers.find((h) => String((h && h.name) || '').toLowerCase() === target);\n      if (found && found.value !== undefined) return String(found.value || '');\n      continue;\n    }\n    if (typeof headers === 'object') {\n      for (const key of Object.keys(headers)) {\n        if (String(key).toLowerCase() === target) return String(headers[key] || '');\n      }\n    }\n  }\n  return '';\n};\n\nconst actualId = String(\n  verified.id ||\n  verified.draftId ||\n  verified.draft_id ||\n  created.gmail_draft_id ||\n  ''\n).trim();\nif (!actualId) throw new Error('Gmail verification returned no draft ID.');\nif (created.gmail_draft_id && actualId !== String(created.gmail_draft_id)) {\n  throw new Error('Verified Gmail draft ID does not match the created draft ID.');\n}\n\nconst actualSubject = String(\n  verified.subject ||\n  (verified.message && verified.message.subject) ||\n  headerValue('subject') ||\n  ''\n).trim();\n\nlet actualRecipients = [];\nconst recipientSources = [\n  verified.to,\n  verified.recipient,\n  verified.recipients,\n  verified.message && verified.message.to,\n  verified.message && verified.message.recipient,\n  headerValue('to'),\n];\nfor (const source of recipientSources) {\n  actualRecipients = actualRecipients.concat(collectEmails(source, 0));\n}\nactualRecipients = Array.from(new Set(actualRecipients.map((v) => String(v).trim().toLowerCase()).filter(Boolean)));\n\nconst actualBody = String(\n  verified.text ||\n  verified.body ||\n  verified.textAsHtml ||\n  verified.html ||\n  (verified.message && (verified.message.text || verified.message.body || verified.message.html)) ||\n  ''\n).trim();\n\nconst normalizeText = (value) => String(value || '')\n  .replace(/\\r\\n/g, '\\n')\n  .replace(/[ \\t]+\\n/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nif (actualSubject && expectedSubject && normalizeText(actualSubject) !== normalizeText(expectedSubject)) {\n  throw new Error('Verified Gmail draft subject does not match the generated subject.');\n}\n\nif (actualRecipients.length && expectedRecipient && !actualRecipients.includes(expectedRecipient)) {\n  throw new Error(\n    'Verified Gmail draft recipient does not match the selected lead. ' +\n    'Expected=' + expectedRecipient + '; actual=' + actualRecipients.join(', ')\n  );\n}\n\nconst actualBodyNormalized = normalizeText(actualBody);\nconst expectedBodyNormalized = normalizeText(expectedBody);\nif (\n  actualBodyNormalized &&\n  expectedBodyNormalized &&\n  actualBodyNormalized !== expectedBodyNormalized &&\n  actualBodyNormalized.indexOf(expectedBodyNormalized) === -1 &&\n  expectedBodyNormalized.indexOf(actualBodyNormalized) === -1\n) {\n  throw new Error('Verified Gmail draft body does not match the generated email body.');\n}\n\nconst verificationWarnings = [];\nif (!actualRecipients.length) {\n  verificationWarnings.push('Gmail returned the draft but did not expose a parseable To address; draft ID, subject and body checks passed.');\n}\nif (!actualSubject) verificationWarnings.push('Gmail returned no parseable subject for comparison.');\nif (!actualBody) verificationWarnings.push('Gmail returned no parseable body for comparison.');\n\nreturn [{ json: {\n  ...created,\n  verified_draft_response: verified,\n  verified_recipients: actualRecipients,\n  gmail_verification_warning: verificationWarnings.join(' '),\n  gmail_verified: true,\n  gmail_draft_id: created.gmail_draft_id || actualId,\n  gmail_message_id: created.gmail_message_id || String(verified.messageId || verified.message_id || ''),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7420,
+        240
+      ],
+      "id": "8a0fdd21-2ae0-4ce7-ab05-78fc5f87d521",
+      "name": "Validate Verified Gmail Draft",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Processing claim failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Failed',\n  failed_stage: 'processing_claim',\n  error_code: code,\n  error_message: message,\n  retryable: true,\n  draft_may_exist: false,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Processing claim failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3100,
+        620
+      ],
+      "id": "e68d53ca-93a9-45d4-b4d5-7a62f49f23f6",
+      "name": "Set Failure - Processing Claim"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'New chat initialization failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Failed',\n  failed_stage: 'new_chat',\n  error_code: code,\n  error_message: message,\n  retryable: true,\n  draft_may_exist: false,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `New chat initialization failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4060,
+        620
+      ],
+      "id": "0e18f5cc-7617-4621-95f0-fc53ba79b3c0",
+      "name": "Set Failure - New Chat"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Stage 1 research failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Failed',\n  failed_stage: 'stage1_research',\n  error_code: code,\n  error_message: message,\n  retryable: true,\n  draft_may_exist: false,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Stage 1 research failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4540,
+        620
+      ],
+      "id": "520366f9-32aa-4b2a-95f8-2a099bfadcdb",
+      "name": "Set Failure - Stage 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Stage 2 review failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Failed',\n  failed_stage: 'stage2_review',\n  error_code: code,\n  error_message: message,\n  retryable: true,\n  draft_may_exist: false,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Stage 2 review failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5020,
+        620
+      ],
+      "id": "b1d09275-2a35-4be9-8bb8-d906c27bd7e3",
+      "name": "Set Failure - Stage 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Stage 3 final email failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Failed',\n  failed_stage: 'stage3_final_email',\n  error_code: code,\n  error_message: message,\n  retryable: true,\n  draft_may_exist: false,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Stage 3 final email failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5500,
+        620
+      ],
+      "id": "65b17bde-e1ed-42de-82a2-eb050ac3bfd0",
+      "name": "Set Failure - Stage 3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Email formatting or validation failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Failed',\n  failed_stage: 'email_formatting',\n  error_code: code,\n  error_message: message,\n  retryable: true,\n  draft_may_exist: false,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Email formatting or validation failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5980,
+        620
+      ],
+      "id": "dcf9a200-e9fe-403b-926d-2f272fe4dd88",
+      "name": "Set Failure - Email Formatting"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\nconst created = {};\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Gmail draft creation failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Manual_Review',\n  failed_stage: 'gmail_create',\n  error_code: code,\n  error_message: message,\n  retryable: false,\n  draft_may_exist: true,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Gmail draft creation failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6940,
+        620
+      ],
+      "id": "bdb50a27-a747-422c-96aa-f25c8cefa1d3",
+      "name": "Set Failure - Gmail Create"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst current = $json || {};\n\nlet created = {};\ntry { created = $('Preserve Draft Creation').item.json || {}; } catch (e) {}\n\nconst err = current.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  current.error_message ||\n  current.message ||\n  'Gmail draft verification failed.'\n).trim();\nconst code = String(\n  (typeof err === 'object' && (err.httpCode || err.statusCode || err.code || err.name)) ||\n  current.error_code ||\n  ''\n);\nreturn [{ json: {\n  ...loop,\n  ...created,\n  status: 'Draft_Unverified',\n  failed_stage: 'gmail_verification',\n  error_code: code,\n  error_message: message,\n  retryable: false,\n  draft_may_exist: true,\n  gmail_verified: false,\n  updated_at: new Date().toISOString(),\n  operator_action: `Gmail draft verification failed: ${message}`,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7420,
+        620
+      ],
+      "id": "883ccf30-72ed-4dbe-aa43-1d160317bce7",
+      "name": "Set Failure - Gmail Verify"
+    },
+    {
+      "parameters": {
+        "jsCode": "const loop = $('Loop Over Items').item.json || {};\nconst err = $json?.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  $json?.message ||\n  'Tracker upsert failed after retries.'\n);\nreturn [{ json: {\n  ...loop,\n  status: 'Tracker_Write_Failed',\n  failed_stage: 'tracker_upsert',\n  error_message: message,\n  operator_action: `Tracker write failed after retries: ${message}`,\n  updated_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8380,
+        620
+      ],
+      "id": "4ae4dccd-07de-4d15-be36-9ce33bae067c",
+      "name": "Handle Tracker Write Failure"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Config').first().json.batch_summary_wait_seconds }}",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2380,
+        -240
+      ],
+      "id": "658f26d5-8887-4603-9d86-13ddd68c47c5",
+      "name": "Wait for Batch Visibility",
+      "webhookId": "2c18b812-4920-4c74-a46d-c0a25c1b3b95"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selected = $('Select Batch').all()\n  .map(i => i.json || {})\n  .filter(i => i.is_lead === true);\nconst expected = selected.length;\nconst rows = $input.all().map(i => i.json || {});\nconst norm = (v) => String(v ?? '').trim().toLowerCase();\nconst keys = new Set(selected.map(i => `${norm(i.lead?.email)}|${String(i.run_id || '')}`));\nconst visible = new Set();\nfor (const row of rows) {\n  const key = `${norm(row.email)}|${String(row.run_id || '')}`;\n  if (keys.has(key)) visible.add(key);\n}\nreturn [{ json: {\n  batch_visible: expected > 0 && visible.size >= expected,\n  expected,\n  visible: visible.size,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        -240
+      ],
+      "id": "5049a134-5e6a-4355-9c63-801b012a8718",
+      "name": "Check Batch Visibility"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a9259e1b-2325-4ff6-8332-d42c4ada177b",
+              "leftValue": "={{ $json.batch_visible === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3100,
+        -240
+      ],
+      "id": "99a66d11-d9d4-4a15-8415-904044eaa0a9",
+      "name": "Batch Rows Visible?"
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3340,
+        -40
+      ],
+      "id": "256275e3-528c-4605-a1d6-41fc8a1a0d1d",
+      "name": "Wait for Batch Visibility Retry",
+      "webhookId": "d12fba76-b320-4108-b85e-b519d0cae981"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.tracker_tab }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3580,
+        -40
+      ],
+      "id": "0d3a7b86-7d06-4630-92d3-05a0a7782e7f",
+      "name": "Read Batch Result Retry",
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gt0nhhrT4wPNIFih",
+          "name": "Google Sheets account 3"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f8922d08-c2f2-4630-a276-a00ba793cc52",
+              "leftValue": "={{ ['error', 'consistency_error'].includes($json.outcome) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4060,
+        -240
+      ],
+      "id": "96853f6c-cf64-4e95-b881-24bad4f9dc1e",
+      "name": "Batch Has Hard Failure?"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.error_message }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        4300,
+        -400
+      ],
+      "id": "dc36f524-3dc0-4ddf-9959-3ff756df680e",
+      "name": "Stop: Batch Failed"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: {\n  ...$json,\n  completed_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4300,
+        -80
+      ],
+      "id": "3f2979cc-bbc6-4389-abe0-7036d131641e",
+      "name": "Final Batch Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $json || {};\nconst provider = String(cfg.ai_provider || '').trim();\nconst workerUrl = String(cfg[`${provider}_worker_url`] || '').trim();\nconst problems = [];\nif (!provider) problems.push('Config.ai_provider is missing.');\nif (!workerUrl || !/^https?:\\/\\//i.test(workerUrl)) problems.push(`Worker URL for provider \"${provider || 'missing'}\" is invalid.`);\nif (!String(cfg.sheet_id || '').trim()) problems.push('Config.sheet_id is missing.');\nif (!String(cfg.leads_tab || '').trim()) problems.push('Config.leads_tab is missing.');\nif (!String(cfg.tracker_tab || '').trim()) problems.push('Config.tracker_tab is missing.');\nif (!Number.isFinite(Number(cfg.batch_size)) || Number(cfg.batch_size) < 1) problems.push('Config.batch_size must be at least 1.');\nif (!Number.isFinite(Number(cfg.max_attempts)) || Number(cfg.max_attempts) < 1) problems.push('Config.max_attempts must be at least 1.');\nif (problems.length) throw new Error(problems.join(' '));\nreturn [{ json: { ...cfg, resolved_worker_url: workerUrl } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "574edb97-8228-43cf-a26c-84319bd6af5d",
+      "name": "Validate Config",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const err = $json?.error;\nconst message = String(\n  (typeof err === 'string' ? err : err?.message) ||\n  $json?.message ||\n  'A pipeline preflight dependency failed.'\n).trim();\nreturn [{ json: {\n  status: 'Failed',\n  failed_stage: 'preflight',\n  error_message: message,\n  operator_action: `Pipeline preflight failed: ${message}`,\n  updated_at: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        -240
+      ],
+      "id": "949ec9ce-08ee-4bb7-9718-eed7461e9838",
+      "name": "Set Global Preflight Failure"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.operator_action }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        -240
+      ],
+      "id": "f846bd74-0299-46b7-a09d-7aaee8d3739f",
+      "name": "Stop: Global Preflight Failure"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Validate Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Check": {
+      "main": [
+        [
+          {
+            "node": "Normalize Session Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Session Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Session Result": {
+      "main": [
+        [
+          {
+            "node": "Session Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Session Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Ready?": {
+      "main": [
+        [
+          {
+            "node": "Read Leads Tab",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Session Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Session Failure": {
+      "main": [
+        [
+          {
+            "node": "Stop: Session Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Leads Tab": {
+      "main": [
+        [
+          {
+            "node": "Read Tracker Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Global Preflight Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Tracker Sheet": {
+      "main": [
+        [
+          {
+            "node": "Select Batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Global Preflight Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Batch": {
+      "main": [
+        [
+          {
+            "node": "Has Eligible Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Eligible Lead?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Work Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Wait for Batch Visibility",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Processing Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Processing Tracker Record": {
+      "main": [
+        [
+          {
+            "node": "Upsert Processing Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Processing Claim": {
+      "main": [
+        [
+          {
+            "node": "Wait for Processing Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Processing Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Processing Claim": {
+      "main": [
+        [
+          {
+            "node": "Read Processing Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Processing Claim": {
+      "main": [
+        [
+          {
+            "node": "Verify Processing Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Processing Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Processing Claim": {
+      "main": [
+        [
+          {
+            "node": "Processing Claim Owned?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processing Claim Owned?": {
+      "main": [
+        [
+          {
+            "node": "New Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Claim Conflict Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Conflict Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Chat": {
+      "main": [
+        [
+          {
+            "node": "Adopt New Chat Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - New Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt New Chat Context": {
+      "main": [
+        [
+          {
+            "node": "Run Stage 1 Research",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - New Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stage 1 Research": {
+      "main": [
+        [
+          {
+            "node": "Adopt Stage 1 Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Stage 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Stage 1 Context": {
+      "main": [
+        [
+          {
+            "node": "Run Stage 2 Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Stage 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stage 2 Review": {
+      "main": [
+        [
+          {
+            "node": "Adopt Stage 2 Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Stage 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Stage 2 Context": {
+      "main": [
+        [
+          {
+            "node": "Run Stage 3 Final Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Stage 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Stage 3 Final Email": {
+      "main": [
+        [
+          {
+            "node": "Adopt Stage 3 Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Stage 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adopt Stage 3 Context": {
+      "main": [
+        [
+          {
+            "node": "Format Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Stage 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email": {
+      "main": [
+        [
+          {
+            "node": "Read Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Email Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Attachment": {
+      "main": [
+        [
+          {
+            "node": "Collect Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Attachments": {
+      "main": [
+        [
+          {
+            "node": "Has Attachments?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Email Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Attachments?": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Gmail Draft (No Attachment)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Preserve Draft Creation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Gmail Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft (No Attachment)": {
+      "main": [
+        [
+          {
+            "node": "Preserve Draft Creation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Gmail Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preserve Draft Creation": {
+      "main": [
+        [
+          {
+            "node": "Verify Gmail Draft Exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Gmail Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Gmail Draft Exists": {
+      "main": [
+        [
+          {
+            "node": "Validate Verified Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Gmail Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Verified Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Set Draft Created",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Gmail Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Draft Created": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure - Gmail Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Processing Claim": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - New Chat": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Stage 1": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Stage 2": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Stage 3": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Email Formatting": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Gmail Create": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Failure - Gmail Verify": {
+      "main": [
+        [
+          {
+            "node": "Build Final Tracker Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Final Tracker Record": {
+      "main": [
+        [
+          {
+            "node": "Upsert Final Tracker Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Final Tracker Row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Tracker Write Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Tracker Write Failure": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Batch Visibility": {
+      "main": [
+        [
+          {
+            "node": "Read Batch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Batch Result": {
+      "main": [
+        [
+          {
+            "node": "Check Batch Visibility",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for Batch Visibility Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Batch Visibility": {
+      "main": [
+        [
+          {
+            "node": "Batch Rows Visible?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Rows Visible?": {
+      "main": [
+        [
+          {
+            "node": "Batch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for Batch Visibility Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Batch Visibility Retry": {
+      "main": [
+        [
+          {
+            "node": "Read Batch Result Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Batch Result Retry": {
+      "main": [
+        [
+          {
+            "node": "Batch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Batch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Summary": {
+      "main": [
+        [
+          {
+            "node": "Batch Has Hard Failure?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Has Hard Failure?": {
+      "main": [
+        [
+          {
+            "node": "Stop: Batch Failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final Batch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Config": {
+      "main": [
+        [
+          {
+            "node": "Session Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Global Preflight Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Global Preflight Failure": {
+      "main": [
+        [
+          {
+            "node": "Stop: Global Preflight Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9aeb8957-c8b1-485b-a518-8ba1e1b2fc11",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d9fccc30f68d4ca26e6e990b6199712f23bfd250f5f2459b48feec65781cd704",
+    "fixed_for": "Production hardening: loop, claims, unified failures, Gmail verification, batch reconciliation",
+    "source_file": "lead_gen_test_04.json"
+  },
+  "id": "ruoVq4EcOtxmvHiV",
+  "tags": []
+}

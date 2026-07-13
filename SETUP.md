@@ -387,6 +387,7 @@ Once that's clean, raise `batch_size` and run again to advance through the list.
 | API mode not working | Confirm `API_BASE_URL` + `MODEL` match your provider and `API_KEY` is set (`curl /health`) |
 | API error mentioning `web_search` | Using search on a non-search OpenAI model — set `ENABLE_WEB_SEARCH=false` or use a `*-search-preview` model |
 | Browser worker hangs / empty replies | The site's DOM changed — run `inspect_dom.js` and update selectors (§7c) |
+| Session Check output shows `lead_csv_path` or no `lead` fields | You're running an older imported workflow. `Session Check` validates readiness only and echoes config; it does not include lead rows. Re-import the latest `workflow/lead_gen_xlsx_mode.json`, then verify `Read Leads Tab` and `Select Batch` outputs to confirm leads come from Google Sheets. |
 | "1 drafted, 0 failed (of 2 leads)" | Set `Loop Over Items` → Batch Size = **1** (workers are single-session) |
 | Gmail OAuth2 **401 invalid_client** | Wrong app type or missing redirect URI — see *Troubleshooting Gmail OAuth2 errors* in §3 |
 | No Gmail draft created | Check the Gmail OAuth2 credential + scopes; drafts only, never sent |
