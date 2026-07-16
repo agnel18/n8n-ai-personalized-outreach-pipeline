@@ -6,10 +6,10 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        -4304,
+        400
       ],
-      "id": "9cedcc8e-2409-45d2-80d3-99809be2a03e",
+      "id": "d4a91d8a-3bcd-4c61-827c-69a4a3cf7fe3",
       "name": "Start Pipeline"
     },
     {
@@ -79,7 +79,7 @@
             {
               "id": "c0nf-0000-4000-8000-000000000003",
               "name": "email_signature",
-              "value": "Best,\n[Your Name]\n[Your Title]\nyou@example.com",
+              "value": "Best,\n<br>\n[Your Name]\n<br>\n[Your Title]\n<br>\nyou@example.com",
               "type": "string"
             },
             {
@@ -137,10 +137,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        220,
-        0
+        -4080,
+        400
       ],
-      "id": "39ab44d2-79b9-4f0f-870c-ee81d8fb89eb",
+      "id": "a92023fe-9792-4e40-9fa3-ab74b45380a1",
       "name": "Config"
     },
     {
@@ -157,10 +157,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        680,
-        0
+        -3616,
+        400
       ],
-      "id": "8c0d00a1-eb8d-4b0d-b415-b1dae6fd7b33",
+      "id": "52ecf9c6-e1db-4060-a912-3c2d7cdda310",
       "name": "Session Check",
       "retryOnFail": true,
       "maxTries": 3,
@@ -174,10 +174,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        920,
-        0
+        -3376,
+        400
       ],
-      "id": "ed71a9b9-776e-4e3c-986f-c29592f6925d",
+      "id": "47c96624-6f7c-4a00-87f7-f54c6718644c",
       "name": "Normalize Session Result",
       "onError": "continueErrorOutput"
     },
@@ -209,10 +209,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1160,
-        0
+        -3136,
+        400
       ],
-      "id": "15b6b17c-e6a6-4ff4-b8bc-0f52296da3b8",
+      "id": "ce531113-7aed-4ae0-a761-a4562be11461",
       "name": "Session Ready?"
     },
     {
@@ -222,10 +222,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1400,
-        160
+        -2896,
+        560
       ],
-      "id": "dde750de-e6ea-4e51-95e8-c6e7cdd1ab2f",
+      "id": "243e0e3f-bc6e-41b0-8cf5-1c55debfd2c5",
       "name": "Set Session Failure"
     },
     {
@@ -235,10 +235,10 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        1640,
-        160
+        -2656,
+        560
       ],
-      "id": "8173017e-4e5c-40a0-b49d-2917f45a4e6a",
+      "id": "90aeac7c-040f-486a-8f9b-f3a3df61d2f5",
       "name": "Stop: Session Failure"
     },
     {
@@ -255,15 +255,15 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4300,
-        240
+        0,
+        640
       ],
-      "id": "fc14141d-6462-4e3d-8ef0-8795ff07f782",
+      "id": "bbd0ac7b-303f-427c-9fe7-ded3cc6a72b2",
       "name": "Run Stage 1 Research",
-      "onError": "continueErrorOutput",
       "retryOnFail": true,
       "maxTries": 2,
-      "waitBetweenTries": 3000
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -272,10 +272,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4540,
-        240
+        240,
+        640
       ],
-      "id": "4e6f4846-3fa9-405c-826b-b59b2abfc561",
+      "id": "3dd9aa73-fbf0-4c36-a542-1852ce516214",
       "name": "Adopt Stage 1 Context",
       "onError": "continueErrorOutput"
     },
@@ -293,15 +293,15 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4780,
-        240
+        480,
+        640
       ],
-      "id": "09bd43bd-480b-4a52-a9d6-81723a75397d",
+      "id": "6746a5cb-aac6-4596-9df1-0e33bf06d502",
       "name": "Run Stage 2 Review",
-      "onError": "continueErrorOutput",
       "retryOnFail": true,
       "maxTries": 2,
-      "waitBetweenTries": 3000
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -310,10 +310,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5020,
-        240
+        720,
+        640
       ],
-      "id": "d514ba02-645d-43b0-89d5-e17eb87c5455",
+      "id": "a16079d6-ae1a-4fcd-927d-f0bcc64928fd",
       "name": "Adopt Stage 2 Context",
       "onError": "continueErrorOutput"
     },
@@ -331,15 +331,15 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        5260,
-        240
+        960,
+        640
       ],
-      "id": "16db9d5d-12ca-427f-addc-cbb3f96b297c",
+      "id": "35a36af9-a486-471f-ac26-1c974040b717",
       "name": "Run Stage 3 Final Email",
-      "onError": "continueErrorOutput",
       "retryOnFail": true,
       "maxTries": 2,
-      "waitBetweenTries": 3000
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -348,10 +348,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5500,
-        240
+        1200,
+        640
       ],
-      "id": "c478aaa8-38d6-4a99-9c69-7030b7ff76b2",
+      "id": "ed73d3de-72f5-4e55-b077-d0bc7337c4e4",
       "name": "Adopt Stage 3 Context",
       "onError": "continueErrorOutput"
     },
@@ -375,18 +375,12 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        6700,
-        80
+        2400,
+        480
       ],
-      "id": "7c504cbc-972a-474e-9921-454cda1c09bd",
+      "id": "9da331a1-6d6f-4f91-96cb-ebda5edc38c8",
       "name": "Create Gmail Draft",
       "webhookId": "32bf04d3-b157-4bff-b74b-926dfedc4bae",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "fcpyBkNQ2dIvn8tX",
-          "name": "Gmail account"
-        }
-      },
       "onError": "continueErrorOutput"
     },
     {
@@ -396,10 +390,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7660,
-        240
+        3360,
+        640
       ],
-      "id": "26cef5f1-3352-450f-b2cf-74853f1d258d",
+      "id": "f5bf4735-a947-4635-9ad2-3f48dafa5007",
       "name": "Set Draft Created",
       "onError": "continueErrorOutput"
     },
@@ -420,19 +414,13 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1640,
-        0
+        -2656,
+        400
       ],
-      "id": "2fd606fc-55fa-44c8-a8ae-7e2e0a705767",
+      "id": "a8da2dd9-3437-429a-8af2-962e6f600388",
       "name": "Read Tracker Sheet",
       "executeOnce": true,
       "alwaysOutputData": true,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
@@ -445,24 +433,23 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1880,
-        0
+        -2416,
+        400
       ],
-      "id": "ac940666-cc64-44d8-b9c1-49b8e2b93cb4",
+      "id": "8cba14e1-99af-400b-9f33-39f5bf64600f",
       "name": "Select Batch"
     },
     {
       "parameters": {
-        "batchSize": 1,
         "options": {}
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2360,
-        120
+        -1936,
+        528
       ],
-      "id": "5a7e6d46-5881-48ef-bce0-8da0f23794d2",
+      "id": "28b4317b-3a6e-417b-84d8-c99c2b6d38b9",
       "name": "Loop Over Items"
     },
     {
@@ -479,15 +466,15 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3820,
-        240
+        -480,
+        640
       ],
-      "id": "d2a1af9a-a930-44e0-a3eb-c4e5f35425d0",
+      "id": "da860c11-35cd-41e5-81c5-fe5557059549",
       "name": "New Chat",
-      "onError": "continueErrorOutput",
       "retryOnFail": true,
       "maxTries": 2,
-      "waitBetweenTries": 2000
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -496,10 +483,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5740,
-        240
+        1440,
+        640
       ],
-      "id": "27dab851-15e4-4f06-8a22-c4dd98d2c596",
+      "id": "a743e36a-4530-4bce-aa22-d43698fb1118",
       "name": "Format Email",
       "onError": "continueErrorOutput"
     },
@@ -511,10 +498,10 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        5980,
-        240
+        1680,
+        640
       ],
-      "id": "b17b5a70-414c-4429-a789-c56b669ae3fc",
+      "id": "a6c6ca46-fe27-44fc-83de-429cf874bed1",
       "name": "Read Attachment",
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
@@ -536,18 +523,12 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2620,
-        -240
+        -1680,
+        160
       ],
-      "id": "4affdd9a-3951-4bf4-9aeb-e9220db18afd",
+      "id": "7cd8c1e4-6bb8-408c-ae49-26750a62578b",
       "name": "Read Batch Result",
       "executeOnce": false,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "alwaysOutputData": true,
       "retryOnFail": true,
       "maxTries": 3,
@@ -561,10 +542,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3820,
-        -240
+        -480,
+        160
       ],
-      "id": "b9aecd81-4e91-42e7-8cd0-01389cb21791",
+      "id": "2900da8f-9b51-4502-9046-7422ab363ae1",
       "name": "Batch Summary"
     },
     {
@@ -574,10 +555,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6220,
-        240
+        1920,
+        640
       ],
-      "id": "f267dea3-ab1c-47ec-a309-d3887c5b38e1",
+      "id": "ae97ed56-319c-4dab-bc0a-809fffa70580",
       "name": "Collect Attachments",
       "onError": "continueErrorOutput"
     },
@@ -608,10 +589,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        6460,
-        240
+        2160,
+        640
       ],
-      "id": "f941728b-d52e-4401-a666-bc11a89fa5c6",
+      "id": "f6706d66-8fe9-4709-b724-1dd564f2b86e",
       "name": "Has Attachments?"
     },
     {
@@ -627,18 +608,12 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        6700,
-        400
+        2400,
+        800
       ],
-      "id": "807cfa99-1a2c-4001-91c7-8e66949d214c",
+      "id": "36687e89-139b-4f6f-8d25-1a28c72166e5",
       "name": "Create Gmail Draft (No Attachment)",
       "webhookId": "6a1cc464-8cc1-446d-9810-76db9b75e729",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "fcpyBkNQ2dIvn8tX",
-          "name": "Gmail account"
-        }
-      },
       "onError": "continueErrorOutput"
     },
     {
@@ -658,18 +633,12 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1400,
-        0
+        -2896,
+        400
       ],
-      "id": "6648cb30-a972-41b2-b657-e6f183ac0428",
+      "id": "b288d306-eade-404d-be0b-5aca04a1acbf",
       "name": "Read Leads Tab",
       "executeOnce": true,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
@@ -682,10 +651,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7900,
-        420
+        3600,
+        832
       ],
-      "id": "0c6eac91-7939-4aa7-b3fa-ff374881a3ee",
+      "id": "a9ae6b87-200b-4e54-968c-14584d8f61e2",
       "name": "Build Final Tracker Record"
     },
     {
@@ -700,18 +669,12 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        7180,
-        240
+        2880,
+        640
       ],
-      "id": "762562e2-bea2-4ede-a9db-14a2e2453e46",
+      "id": "7fa68612-f315-45b1-8a0e-2f133b478f82",
       "name": "Verify Gmail Draft Exists",
       "webhookId": "10fc496c-9bce-4073-b3b7-551c2110ad34",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "fcpyBkNQ2dIvn8tX",
-          "name": "Gmail account"
-        }
-      },
       "onError": "continueErrorOutput"
     },
     {
@@ -1616,17 +1579,11 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.3,
       "position": [
-        8140,
-        420
+        3840,
+        832
       ],
-      "id": "1be699dc-1287-458e-ab6b-acd15a926cc3",
+      "id": "be403a0e-30e3-4b30-8964-ef8d8d54ea3f",
       "name": "Upsert Final Tracker Row",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2500,
@@ -1660,10 +1617,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2120,
-        0
+        -2176,
+        400
       ],
-      "id": "1b79aae3-7810-4ded-87a4-a77b9a7df258",
+      "id": "4063e54a-e19a-4bf1-86fe-e208ddecb4e7",
       "name": "Has Eligible Lead?"
     },
     {
@@ -1673,10 +1630,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2360,
-        -200
+        -1936,
+        208
       ],
-      "id": "cbad379c-7939-4345-ac14-af37b1da5eba",
+      "id": "8cf488ac-c45f-4642-a8fe-da0f8bfd6bb8",
       "name": "No Work Result"
     },
     {
@@ -1686,10 +1643,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2380,
-        240
+        -1920,
+        640
       ],
-      "id": "99d06035-f375-4ef9-be83-4ad718062cd7",
+      "id": "cf7cbd6c-b4c4-46af-add0-3a186d921f27",
       "name": "Build Processing Tracker Record"
     },
     {
@@ -2574,17 +2531,11 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.3,
       "position": [
-        2620,
-        240
+        -1680,
+        640
       ],
-      "id": "e1121a8a-a9b3-423e-83ab-fc78b9f30a42",
+      "id": "3dea0b20-e6b7-4dad-8687-ab93e8e9f08f",
       "name": "Upsert Processing Claim",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
@@ -2592,16 +2543,15 @@
     },
     {
       "parameters": {
-        "amount": 1,
-        "unit": "seconds"
+        "amount": 1
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2860,
-        240
+        -1440,
+        640
       ],
-      "id": "37cfce50-5b65-41e2-bcc5-58a96af0defe",
+      "id": "bd8a69ee-d451-4c81-8c5c-50583f28062d",
       "name": "Wait for Processing Claim",
       "webhookId": "66777aff-0f1a-408e-ba31-dee3c923555a"
     },
@@ -2622,19 +2572,13 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        3100,
-        240
+        -1200,
+        640
       ],
-      "id": "dd7c50a1-0a71-4f1a-a584-fd5108aa4cfa",
+      "id": "62ff382f-53be-4142-999c-80bba16dfcf1",
       "name": "Read Processing Claim",
       "executeOnce": false,
       "alwaysOutputData": true,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
@@ -2647,10 +2591,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3340,
-        240
+        -960,
+        640
       ],
-      "id": "eb3fef86-9bb6-4184-aa62-73e328d8c7b7",
+      "id": "4c523cc6-b303-427d-a675-b62fd6cf73ee",
       "name": "Verify Processing Claim"
     },
     {
@@ -2681,10 +2625,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3580,
-        240
+        -720,
+        640
       ],
-      "id": "a30df4dd-f0d0-4e57-b9fe-f23324142d23",
+      "id": "7b435854-ccb2-46cd-9fd6-3cb10d8ac3c4",
       "name": "Processing Claim Owned?"
     },
     {
@@ -2694,10 +2638,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3820,
-        500
+        -480,
+        912
       ],
-      "id": "b78e7476-9bfe-4f14-a363-c34ca0da0d46",
+      "id": "89418cc8-32ee-4e01-b7e4-31e3946a6786",
       "name": "Claim Conflict Result"
     },
     {
@@ -2707,10 +2651,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4060,
-        240
+        -240,
+        640
       ],
-      "id": "af07780a-3171-431e-9d52-e16c5d9090cc",
+      "id": "9929b207-4db6-42b6-b349-29c442be92ac",
       "name": "Adopt New Chat Context",
       "onError": "continueErrorOutput"
     },
@@ -2721,24 +2665,24 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6940,
-        240
+        2640,
+        640
       ],
-      "id": "52c8b009-6b4f-4e19-afee-fc1b7a7e1da4",
+      "id": "5453e8d2-a8b6-4a39-bd62-3788b2f02e0b",
       "name": "Preserve Draft Creation",
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "jsCode": "const verified = $json || {};\nconst created = $('Preserve Draft Creation').item.json || {};\nconst expectedSubject = String(created.email_subject || '').trim();\nconst expectedRecipient = String(created.recipient || '').trim().toLowerCase();\nconst expectedBody = String(created.email_body || '').trim();\n\nconst extractEmailsFromString = (value) => {\n  const matches = String(value || '').toLowerCase().match(/[a-z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+/g);\n  return matches || [];\n};\n\nconst collectEmails = (value, depth) => {\n  depth = depth || 0;\n  if (depth > 5 || value === null || value === undefined) return [];\n  if (typeof value === 'string' || typeof value === 'number') {\n    return extractEmailsFromString(value);\n  }\n  if (Array.isArray(value)) {\n    let out = [];\n    for (const entry of value) out = out.concat(collectEmails(entry, depth + 1));\n    return out;\n  }\n  if (typeof value === 'object') {\n    let out = [];\n    const addressKeys = ['address', 'value', 'text', 'html', 'email', 'emailAddress'];\n    for (const key of addressKeys) {\n      if (Object.prototype.hasOwnProperty.call(value, key)) {\n        out = out.concat(collectEmails(value[key], depth + 1));\n      }\n    }\n    return out;\n  }\n  return [];\n};\n\nconst headerValue = (name) => {\n  const target = String(name || '').toLowerCase();\n  const candidates = [\n    verified.headers,\n    verified.message && verified.message.headers,\n    verified.payload && verified.payload.headers,\n    verified.message && verified.message.payload && verified.message.payload.headers,\n  ];\n\n  for (const headers of candidates) {\n    if (!headers) continue;\n    if (Array.isArray(headers)) {\n      const found = headers.find((h) => String((h && h.name) || '').toLowerCase() === target);\n      if (found && found.value !== undefined) return String(found.value || '');\n      continue;\n    }\n    if (typeof headers === 'object') {\n      for (const key of Object.keys(headers)) {\n        if (String(key).toLowerCase() === target) return String(headers[key] || '');\n      }\n    }\n  }\n  return '';\n};\n\nconst actualId = String(\n  verified.id ||\n  verified.draftId ||\n  verified.draft_id ||\n  created.gmail_draft_id ||\n  ''\n).trim();\nif (!actualId) throw new Error('Gmail verification returned no draft ID.');\nif (created.gmail_draft_id && actualId !== String(created.gmail_draft_id)) {\n  throw new Error('Verified Gmail draft ID does not match the created draft ID.');\n}\n\nconst actualSubject = String(\n  verified.subject ||\n  (verified.message && verified.message.subject) ||\n  headerValue('subject') ||\n  ''\n).trim();\n\nlet actualRecipients = [];\nconst recipientSources = [\n  verified.to,\n  verified.recipient,\n  verified.recipients,\n  verified.message && verified.message.to,\n  verified.message && verified.message.recipient,\n  headerValue('to'),\n];\nfor (const source of recipientSources) {\n  actualRecipients = actualRecipients.concat(collectEmails(source, 0));\n}\nactualRecipients = Array.from(new Set(actualRecipients.map((v) => String(v).trim().toLowerCase()).filter(Boolean)));\n\nconst actualBody = String(\n  verified.text ||\n  verified.body ||\n  verified.textAsHtml ||\n  verified.html ||\n  (verified.message && (verified.message.text || verified.message.body || verified.message.html)) ||\n  ''\n).trim();\n\nconst normalizeText = (value) => String(value || '')\n  .replace(/\\r\\n/g, '\\n')\n  .replace(/[ \\t]+\\n/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nif (actualSubject && expectedSubject && normalizeText(actualSubject) !== normalizeText(expectedSubject)) {\n  throw new Error('Verified Gmail draft subject does not match the generated subject.');\n}\n\nif (actualRecipients.length && expectedRecipient && !actualRecipients.includes(expectedRecipient)) {\n  throw new Error(\n    'Verified Gmail draft recipient does not match the selected lead. ' +\n    'Expected=' + expectedRecipient + '; actual=' + actualRecipients.join(', ')\n  );\n}\n\nconst actualBodyNormalized = normalizeText(actualBody);\nconst expectedBodyNormalized = normalizeText(expectedBody);\nif (\n  actualBodyNormalized &&\n  expectedBodyNormalized &&\n  actualBodyNormalized !== expectedBodyNormalized &&\n  actualBodyNormalized.indexOf(expectedBodyNormalized) === -1 &&\n  expectedBodyNormalized.indexOf(actualBodyNormalized) === -1\n) {\n  throw new Error('Verified Gmail draft body does not match the generated email body.');\n}\n\nconst verificationWarnings = [];\nif (!actualRecipients.length) {\n  verificationWarnings.push('Gmail returned the draft but did not expose a parseable To address; draft ID, subject and body checks passed.');\n}\nif (!actualSubject) verificationWarnings.push('Gmail returned no parseable subject for comparison.');\nif (!actualBody) verificationWarnings.push('Gmail returned no parseable body for comparison.');\n\nreturn [{ json: {\n  ...created,\n  verified_draft_response: verified,\n  verified_recipients: actualRecipients,\n  gmail_verification_warning: verificationWarnings.join(' '),\n  gmail_verified: true,\n  gmail_draft_id: created.gmail_draft_id || actualId,\n  gmail_message_id: created.gmail_message_id || String(verified.messageId || verified.message_id || ''),\n} }];"
+        "jsCode": "const verified = $json || {};\nconst created = $('Preserve Draft Creation').item.json || {};\nconst expectedSubject = String(created.email_subject || '').trim();\nconst expectedRecipient = String(created.recipient || '').trim().toLowerCase();\nconst expectedBody = String(created.email_body || '').trim();\n\nconst extractEmailsFromString = (value) => {\n  const matches = String(value || '').toLowerCase().match(/[a-z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+/g);\n  return matches || [];\n};\n\nconst collectEmails = (value, depth) => {\n  depth = depth || 0;\n  if (depth > 5 || value === null || value === undefined) return [];\n  if (typeof value === 'string' || typeof value === 'number') {\n    return extractEmailsFromString(value);\n  }\n  if (Array.isArray(value)) {\n    let out = [];\n    for (const entry of value) out = out.concat(collectEmails(entry, depth + 1));\n    return out;\n  }\n  if (typeof value === 'object') {\n    let out = [];\n    const addressKeys = ['address', 'value', 'text', 'html', 'email', 'emailAddress'];\n    for (const key of addressKeys) {\n      if (Object.prototype.hasOwnProperty.call(value, key)) {\n        out = out.concat(collectEmails(value[key], depth + 1));\n      }\n    }\n    return out;\n  }\n  return [];\n};\n\nconst headerValue = (name) => {\n  const target = String(name || '').toLowerCase();\n  const candidates = [\n    verified.headers,\n    verified.message && verified.message.headers,\n    verified.payload && verified.payload.headers,\n    verified.message && verified.message.payload && verified.message.payload.headers,\n  ];\n\n  for (const headers of candidates) {\n    if (!headers) continue;\n    if (Array.isArray(headers)) {\n      const found = headers.find((h) => String((h && h.name) || '').toLowerCase() === target);\n      if (found && found.value !== undefined) return String(found.value || '');\n      continue;\n    }\n    if (typeof headers === 'object') {\n      for (const key of Object.keys(headers)) {\n        if (String(key).toLowerCase() === target) return String(headers[key] || '');\n      }\n    }\n  }\n  return '';\n};\n\nconst actualId = String(\n  verified.id ||\n  verified.draftId ||\n  verified.draft_id ||\n  created.gmail_draft_id ||\n  ''\n).trim();\nif (!actualId) throw new Error('Gmail verification returned no draft ID.');\nif (created.gmail_draft_id && actualId !== String(created.gmail_draft_id)) {\n  throw new Error('Verified Gmail draft ID does not match the created draft ID.');\n}\n\nconst actualSubject = String(\n  verified.subject ||\n  (verified.message && verified.message.subject) ||\n  headerValue('subject') ||\n  ''\n).trim();\n\nlet actualRecipients = [];\nconst recipientSources = [\n  verified.to,\n  verified.recipient,\n  verified.recipients,\n  verified.message && verified.message.to,\n  verified.message && verified.message.recipient,\n  headerValue('to'),\n];\nfor (const source of recipientSources) {\n  actualRecipients = actualRecipients.concat(collectEmails(source, 0));\n}\nactualRecipients = Array.from(new Set(actualRecipients.map((v) => String(v).trim().toLowerCase()).filter(Boolean)));\n\n// A Gmail Get Draft response may expose HTML, rendered text, or both. Compare all\n// usable representations instead of comparing plain text directly with raw HTML.\nconst rawBodyCandidates = [\n  verified.html,\n  verified.textHtml,\n  verified.textAsHtml,\n  verified.body,\n  verified.text,\n  verified.message && verified.message.html,\n  verified.message && verified.message.textHtml,\n  verified.message && verified.message.textAsHtml,\n  verified.message && verified.message.body,\n  verified.message && verified.message.text,\n];\nconst bodyCandidates = rawBodyCandidates\n  .filter((value) => typeof value === 'string' || typeof value === 'number')\n  .map((value) => String(value).trim())\n  .filter(Boolean);\nconst actualBody = bodyCandidates[0] || '';\n\nconst decodeHtmlEntities = (value) => String(value || '')\n  .replace(/&#(\\d+);/g, (_, code) => {\n    const point = Number(code);\n    return Number.isFinite(point) ? String.fromCodePoint(point) : _;\n  })\n  .replace(/&#x([0-9a-f]+);/gi, (_, code) => {\n    const point = parseInt(code, 16);\n    return Number.isFinite(point) ? String.fromCodePoint(point) : _;\n  })\n  .replace(/&nbsp;/gi, ' ')\n  .replace(/&amp;/gi, '&')\n  .replace(/&lt;/gi, '<')\n  .replace(/&gt;/gi, '>')\n  .replace(/&quot;/gi, '\"')\n  .replace(/&#39;|&apos;/gi, \"'\");\n\nconst canonicalBody = (value) => {\n  let text = String(value || '')\n    .replace(/\\r\\n?/g, '\\n')\n    .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, ' ')\n    .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, ' ')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<li\\b[^>]*>/gi, '\\n')\n    .replace(/<\\/(p|div|li|ul|ol|tr|table|h[1-6])\\s*>/gi, '\\n')\n    .replace(/<[^>]+>/g, ' ');\n\n  text = decodeHtmlEntities(text)\n    .replace(/[\\u00a0\\u2007\\u202f]/g, ' ')\n    .replace(/[“”]/g, '\"')\n    .replace(/[‘’]/g, \"'\")\n    .replace(/[–—]/g, '-')\n    .replace(/^\\s*[•●▪◦*-]+\\s*/gm, '')\n    .replace(/[ \\t\\f\\v]+/g, ' ')\n    .replace(/\\s*\\n\\s*/g, '\\n')\n    .replace(/\\n{2,}/g, '\\n')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  return text;\n};\n\nconst normalizeHeader = (value) => String(value || '')\n  .replace(/\\r\\n/g, '\\n')\n  .replace(/[ \\t]+\\n/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nif (actualSubject && expectedSubject && normalizeHeader(actualSubject) !== normalizeHeader(expectedSubject)) {\n  throw new Error('Verified Gmail draft subject does not match the generated subject.');\n}\n\nif (actualRecipients.length && expectedRecipient && !actualRecipients.includes(expectedRecipient)) {\n  throw new Error(\n    'Verified Gmail draft recipient does not match the selected lead. ' +\n    'Expected=' + expectedRecipient + '; actual=' + actualRecipients.join(', ')\n  );\n}\n\nconst expectedBodyCanonical = canonicalBody(expectedBody);\nconst actualBodyCanonicalCandidates = Array.from(new Set(bodyCandidates.map(canonicalBody).filter(Boolean)));\nconst bodyMatches = actualBodyCanonicalCandidates.some((candidate) =>\n  candidate === expectedBodyCanonical ||\n  candidate.includes(expectedBodyCanonical) ||\n  expectedBodyCanonical.includes(candidate)\n);\n\nif (actualBodyCanonicalCandidates.length && expectedBodyCanonical && !bodyMatches) {\n  throw new Error(\n    'Verified Gmail draft body does not match the generated email body after HTML/text normalization. ' +\n    `Expected canonical length=${expectedBodyCanonical.length}; Gmail variants=${actualBodyCanonicalCandidates.map(v => v.length).join(',')}.`\n  );\n}\n\nconst verificationWarnings = [];\nif (!actualRecipients.length) {\n  verificationWarnings.push('Gmail returned the draft but did not expose a parseable To address; draft ID, subject and body checks passed.');\n}\nif (!actualSubject) verificationWarnings.push('Gmail returned no parseable subject for comparison.');\nif (!actualBody) verificationWarnings.push('Gmail returned no parseable body for comparison.');\n\nreturn [{ json: {\n  ...created,\n  verified_draft_response: verified,\n  verified_recipients: actualRecipients,\n  gmail_verification_warning: verificationWarnings.join(' '),\n  gmail_verified: true,\n  gmail_draft_id: created.gmail_draft_id || actualId,\n  gmail_message_id: created.gmail_message_id || String(verified.messageId || verified.message_id || ''),\n} }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7420,
-        240
+        3120,
+        640
       ],
-      "id": "8a0fdd21-2ae0-4ce7-ab05-78fc5f87d521",
+      "id": "7b6def45-6210-4d5a-b61b-5e461a2e2c51",
       "name": "Validate Verified Gmail Draft",
       "onError": "continueErrorOutput"
     },
@@ -2749,10 +2693,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3100,
-        620
+        -1200,
+        1024
       ],
-      "id": "e68d53ca-93a9-45d4-b4d5-7a62f49f23f6",
+      "id": "e1d18d98-15c9-4742-a71b-aec6149cb55a",
       "name": "Set Failure - Processing Claim"
     },
     {
@@ -2762,10 +2706,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4060,
-        620
+        -240,
+        1024
       ],
-      "id": "0e18f5cc-7617-4621-95f0-fc53ba79b3c0",
+      "id": "1b40726d-6592-47d1-a043-cbdc0b6242cd",
       "name": "Set Failure - New Chat"
     },
     {
@@ -2775,10 +2719,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4540,
-        620
+        240,
+        1024
       ],
-      "id": "520366f9-32aa-4b2a-95f8-2a099bfadcdb",
+      "id": "e63f9e0f-d6c7-4f27-9210-d1f49afbcf8b",
       "name": "Set Failure - Stage 1"
     },
     {
@@ -2788,10 +2732,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5020,
-        620
+        720,
+        1024
       ],
-      "id": "b1d09275-2a35-4be9-8bb8-d906c27bd7e3",
+      "id": "48f8d012-de1d-4453-8cff-1c73bdece16e",
       "name": "Set Failure - Stage 2"
     },
     {
@@ -2801,10 +2745,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5500,
-        620
+        1200,
+        1024
       ],
-      "id": "65b17bde-e1ed-42de-82a2-eb050ac3bfd0",
+      "id": "09652b73-d60b-417a-8f7f-8a0c14e6baa0",
       "name": "Set Failure - Stage 3"
     },
     {
@@ -2814,10 +2758,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5980,
-        620
+        1680,
+        1024
       ],
-      "id": "dcf9a200-e9fe-403b-926d-2f272fe4dd88",
+      "id": "824ba384-0b1d-435f-8918-25b2f70490c1",
       "name": "Set Failure - Email Formatting"
     },
     {
@@ -2827,10 +2771,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6940,
-        620
+        2640,
+        1024
       ],
-      "id": "bdb50a27-a747-422c-96aa-f25c8cefa1d3",
+      "id": "8c9647d7-4d3c-400e-9408-4006ca61b45e",
       "name": "Set Failure - Gmail Create"
     },
     {
@@ -2840,10 +2784,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7420,
-        620
+        3120,
+        1024
       ],
-      "id": "883ccf30-72ed-4dbe-aa43-1d160317bce7",
+      "id": "a875788d-f843-46f7-97c2-d5fdb97cd252",
       "name": "Set Failure - Gmail Verify"
     },
     {
@@ -2853,24 +2797,23 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8380,
-        620
+        4080,
+        1024
       ],
-      "id": "4ae4dccd-07de-4d15-be36-9ce33bae067c",
+      "id": "38fa0c3a-3a16-4e95-a397-f147d1a5058d",
       "name": "Handle Tracker Write Failure"
     },
     {
       "parameters": {
-        "amount": "={{ $('Config').first().json.batch_summary_wait_seconds }}",
-        "unit": "seconds"
+        "amount": "={{ $('Config').first().json.batch_summary_wait_seconds }}"
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2380,
-        -240
+        -1920,
+        160
       ],
-      "id": "658f26d5-8887-4603-9d86-13ddd68c47c5",
+      "id": "591ea923-19f5-4fa2-877a-03d1ad8bc717",
       "name": "Wait for Batch Visibility",
       "webhookId": "2c18b812-4920-4c74-a46d-c0a25c1b3b95"
     },
@@ -2881,10 +2824,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2860,
-        -240
+        -1440,
+        160
       ],
-      "id": "5049a134-5e6a-4355-9c63-801b012a8718",
+      "id": "f3cb88ac-f2b2-4410-9a84-267b82cc80c6",
       "name": "Check Batch Visibility"
     },
     {
@@ -2915,24 +2858,21 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3100,
-        -240
+        -1200,
+        160
       ],
-      "id": "99a66d11-d9d4-4a15-8415-904044eaa0a9",
+      "id": "2e66890b-8b37-4de3-9b92-86e7c1e56fdd",
       "name": "Batch Rows Visible?"
     },
     {
-      "parameters": {
-        "amount": 5,
-        "unit": "seconds"
-      },
+      "parameters": {},
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        3340,
-        -40
+        -960,
+        368
       ],
-      "id": "256275e3-528c-4605-a1d6-41fc8a1a0d1d",
+      "id": "33d72bd7-664b-4fc9-a127-b18a2f1d6f68",
       "name": "Wait for Batch Visibility Retry",
       "webhookId": "d12fba76-b320-4108-b85e-b519d0cae981"
     },
@@ -2953,18 +2893,12 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        3580,
-        -40
+        -720,
+        368
       ],
-      "id": "0d3a7b86-7d06-4630-92d3-05a0a7782e7f",
+      "id": "9cf3d2ad-5c92-4c78-be06-ccc9a941b93f",
       "name": "Read Batch Result Retry",
       "executeOnce": false,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "gt0nhhrT4wPNIFih",
-          "name": "Google Sheets account 3"
-        }
-      },
       "alwaysOutputData": true,
       "retryOnFail": true,
       "maxTries": 3,
@@ -2999,10 +2933,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4060,
-        -240
+        -240,
+        160
       ],
-      "id": "96853f6c-cf64-4e95-b881-24bad4f9dc1e",
+      "id": "41e25860-7418-4c06-ba65-4cfd7ca70cc7",
       "name": "Batch Has Hard Failure?"
     },
     {
@@ -3012,10 +2946,10 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4300,
-        -400
+        0,
+        0
       ],
-      "id": "dc36f524-3dc0-4ddf-9959-3ff756df680e",
+      "id": "21ed5cf6-5d54-4bd6-9711-fa04a1951b9f",
       "name": "Stop: Batch Failed"
     },
     {
@@ -3025,10 +2959,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4300,
-        -80
+        0,
+        320
       ],
-      "id": "3f2979cc-bbc6-4389-abe0-7036d131641e",
+      "id": "da09e8d4-57e0-4bcc-b369-a0bfcb50eec4",
       "name": "Final Batch Result"
     },
     {
@@ -3038,10 +2972,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
-        0
+        -3856,
+        400
       ],
-      "id": "574edb97-8228-43cf-a26c-84319bd6af5d",
+      "id": "e2357e66-5ff9-4fd4-80bf-b6fcbee798cc",
       "name": "Validate Config",
       "onError": "continueErrorOutput"
     },
@@ -3052,10 +2986,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1400,
-        -240
+        -2896,
+        160
       ],
-      "id": "949ec9ce-08ee-4bb7-9718-eed7461e9838",
+      "id": "0153fce6-a59a-4692-ab2d-89b398e95860",
       "name": "Set Global Preflight Failure"
     },
     {
@@ -3065,10 +2999,10 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        1640,
-        -240
+        -2656,
+        160
       ],
-      "id": "f846bd74-0299-46b7-a09d-7aaee8d3739f",
+      "id": "36bbc50e-0685-48bc-b7f5-7dcd1c9e9b51",
       "name": "Stop: Global Preflight Failure"
     }
   ],
@@ -3938,13 +3872,10 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "9aeb8957-c8b1-485b-a518-8ba1e1b2fc11",
+  "versionId": "dae2f475-7cc5-4d50-b03e-143bf2fca064",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "d9fccc30f68d4ca26e6e990b6199712f23bfd250f5f2459b48feec65781cd704",
-    "fixed_for": "Production hardening: loop, claims, unified failures, Gmail verification, batch reconciliation",
-    "source_file": "lead_gen_test_04.json"
+    "instanceId": "18ee24150dcb1d96752a4d6dd0f20dfd8ba8c38527e40aa8509b7adecf78f9c6"
   },
-  "id": "ruoVq4EcOtxmvHiV",
+  "id": "tQnd3xbHg2A8JF86",
   "tags": []
 }
