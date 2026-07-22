@@ -15,6 +15,26 @@
 
 ---
 
+# 🎥 Demo
+
+[![Watch the demo](https://img.youtube.com/vi/40CX6arPbSM/maxresdefault.jpg)](https://youtu.be/40CX6arPbSM)
+
+> 📺 **Watch the complete walkthrough on YouTube**
+>
+> https://youtu.be/40CX6arPbSM
+
+This demo covers:
+
+- Complete n8n workflow
+- Google Sheets lead tracking
+- AI research pipeline
+- Automated Gmail draft creation
+- ChatGPT / Grok browser workers
+- API mode
+- End-to-end execution
+
+---
+
 ## 📌 What It Does
 
 For each lead, the pipeline runs a **3-stage AI chain** and lands a ready-to-review email:
